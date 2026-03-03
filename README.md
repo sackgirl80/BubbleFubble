@@ -52,11 +52,11 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` with your values:
+Edit `.env` with your values (leave `TELEGRAM_CHAT_ID` as-is for now — you'll set it in step 6):
 
 ```
 TELEGRAM_BOT_TOKEN=your_bot_token_here
-TELEGRAM_CHAT_ID=your_chat_id_here
+TELEGRAM_CHAT_ID=your_chat_id_here          # ← set in step 6 below
 PEXELS_API_KEY=your_pexels_api_key_here
 
 # Choose your AI provider: "anthropic" (recommended) or "groq"
