@@ -7,7 +7,7 @@
     "start": "node index.js",
     "chat-id": "node get-chat-id.js",
     "setup": "bash setup.sh",
-    "test": "node --test 'test/*.test.js'"
+    "test": "node --test test/feature-manager.test.js test/history.test.js test/chat-history.test.js test/ai.test.js"
   },
   "dependencies": {
     "dotenv": "^16.4.0"
