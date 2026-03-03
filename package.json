@@ -1,0 +1,14 @@
+{
+  "name": "bubblefubble",
+  "version": "1.0.0",
+  "description": "Send a random cute animal photo via Telegram daily",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "chat-id": "node get-chat-id.js",
+    "setup": "bash setup.sh"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  }
+}
