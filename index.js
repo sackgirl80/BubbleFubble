@@ -4,7 +4,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { fetchRandomAnimal } = require('./lib/sources');
 const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
 const { sendPhoto, sendMessage, sendPoll, sendQuiz } = require('./lib/telegram');
-const { generateText } = require('./lib/ai');
+const { generateText, getApiKey } = require('./lib/ai');
 const fm = require('./lib/feature-manager');
 
 const CAPTIONS = [
@@ -24,7 +24,7 @@ async function main() {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   const pexelsKey = process.env.PEXELS_API_KEY;
-  const groqKey = process.env.GROQ_API_KEY;
+  const aiKey = getApiKey();
 
   if (!botToken || botToken === 'your_bot_token_here') {
     console.error('Set TELEGRAM_BOT_TOKEN in .env');
@@ -80,13 +80,13 @@ async function main() {
   const ctx = {
     botToken,
     chatId,
-    groqKey,
+    aiKey,
     pexelsKey,
     sendMessage,
     sendPhoto,
     sendPoll,
     sendQuiz,
-    generateText: (prompt) => generateText(groqKey, prompt),
+    generateText: (prompt) => generateText(aiKey, prompt),
     animal: photo.animal,
   };
 

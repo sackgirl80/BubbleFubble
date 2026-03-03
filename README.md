@@ -33,15 +33,18 @@ npm install
 2. Send `/newbot` and follow the prompts to create your bot
 3. Copy the **bot token** you receive
 
-### 4. Get free API keys
+### 4. Get API keys
 
 **Pexels** (animal photos):
 1. Sign up at https://www.pexels.com/api/ (free, no credit card)
 2. Copy your API key
 
-**Groq** (chat replies):
-1. Sign up at https://console.groq.com/keys (free)
-2. Create an API key
+**AI provider** (chat replies) — choose one:
+
+| Provider | Quality | Cost | Signup |
+|----------|---------|------|--------|
+| **Anthropic (Claude Haiku)** | Excellent | ~$0.001/message | https://console.anthropic.com/ |
+| **Groq (Llama 3.3 70B)** | Good | Free (100K tokens/day) | https://console.groq.com/keys |
 
 ### 5. Configure environment
 
@@ -55,7 +58,16 @@ Edit `.env` with your values:
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 PEXELS_API_KEY=your_pexels_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
+
+# Choose your AI provider: "anthropic" (recommended) or "groq"
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your_key_here
+```
+
+To use Groq instead:
+```
+AI_PROVIDER=groq
+GROQ_API_KEY=your_key_here
 ```
 
 ### 6. Get the recipient's chat ID
@@ -156,5 +168,5 @@ The bot automatically loads all features from the `features/` directory on start
 - **Image sources**: Pexels API (50% chance), The Cat API (25%), random.dog (25%). If one source fails, the others are tried as fallback.
 - **Duplicate prevention**: Every sent photo ID is recorded in `sent-photos.json`. The script retries up to 10 times if it draws a duplicate.
 - **Captions**: Random cheerful messages in German.
-- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to Groq (Llama 3.3 70B, free tier) with a short conversation history (last 20 messages) for context. Replies match the language the recipient writes in.
+- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to your chosen AI provider (Anthropic Claude or Groq Llama) with conversation history (last 100 messages) for context. Replies match the language the recipient writes in.
 - **Feature system**: Features are loaded from `features/` and can be toggled on/off via chat. Each feature can add to the AI's system prompt, provide additional tools, and hook into photo and daily events.

@@ -3,14 +3,14 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { sendPhoto, sendMessage, sendPoll, sendQuiz, getUpdatesLongPoll } = require('./lib/telegram');
 const { loadChatHistory, addMessage } = require('./lib/chat-history');
-const { generateReply, generateText, BASE_PROMPT, BASE_TOOLS } = require('./lib/ai');
+const { generateReply, generateText, getApiKey, getProvider, BASE_PROMPT, BASE_TOOLS } = require('./lib/ai');
 const { fetchRandomAnimal } = require('./lib/sources');
 const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
 const fm = require('./lib/feature-manager');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const GROQ_KEY = process.env.GROQ_API_KEY;
+const AI_KEY = getApiKey();
 const PEXELS_KEY = process.env.PEXELS_API_KEY;
 
 if (!BOT_TOKEN || BOT_TOKEN === 'your_bot_token_here') {
@@ -21,14 +21,16 @@ if (!CHAT_ID || CHAT_ID === 'your_chat_id_here') {
   console.error('Set TELEGRAM_CHAT_ID in .env');
   process.exit(1);
 }
-if (!GROQ_KEY || GROQ_KEY === 'your_groq_api_key_here') {
-  console.error('Set GROQ_API_KEY in .env (free at https://console.groq.com/keys)');
+if (!AI_KEY) {
+  const provider = getProvider();
+  console.error(`Set ${provider === 'groq' ? 'GROQ_API_KEY' : 'ANTHROPIC_API_KEY'} in .env`);
   process.exit(1);
 }
 
 // Load features
 fm.loadFeatures();
 fm.loadConfig();
+console.log(`AI provider: ${getProvider()}`);
 console.log(
   `Loaded ${fm.getFeatureList().length} features (${fm.getFeatureList().filter((f) => f.enabled).length} enabled)`
 );
@@ -48,13 +50,13 @@ function makeCtx() {
   return {
     botToken: BOT_TOKEN,
     chatId: CHAT_ID,
-    groqKey: GROQ_KEY,
+    groqKey: AI_KEY,
     pexelsKey: PEXELS_KEY,
     sendMessage,
     sendPhoto,
     sendPoll,
     sendQuiz,
-    generateText: (prompt) => generateText(GROQ_KEY, prompt),
+    generateText: (prompt) => generateText(AI_KEY, prompt),
   };
 }
 
@@ -131,7 +133,7 @@ async function handleToolCall(toolName, args, chatHistory, userText) {
     if (result) {
       // Let the AI respond naturally after the tool call
       const reply = await generateText(
-        GROQ_KEY,
+        AI_KEY,
         `You just performed an action: ${result}. ` +
         `The user said: "${userText}". Write a short, friendly confirmation ` +
         `in the same language the user used. 1-2 sentences max. Use emoji.`
@@ -188,7 +190,7 @@ async function main() {
         const systemPrompt = fm.buildSystemPrompt(BASE_PROMPT);
         const tools = fm.buildTools(BASE_TOOLS);
 
-        const result = await generateReply(GROQ_KEY, chatHistory, userText, systemPrompt, tools);
+        const result = await generateReply(AI_KEY, chatHistory, userText, systemPrompt, tools);
         console.log(
           `[${new Date().toISOString()}] AI decision: ${result.type}` +
           (result.toolName ? ` (${result.toolName})` : '') +
