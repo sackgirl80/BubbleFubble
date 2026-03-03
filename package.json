@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "chat-id": "node get-chat-id.js",
-    "setup": "bash setup.sh"
+    "setup": "bash setup.sh",
+    "test": "node --test 'test/*.test.js'"
   },
   "dependencies": {
     "dotenv": "^16.4.0"
