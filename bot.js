@@ -1,9 +1,11 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const { sendMessage, getUpdatesLongPoll } = require('./lib/telegram');
+const { sendPhoto, sendMessage, getUpdatesLongPoll } = require('./lib/telegram');
 const { loadChatHistory, addMessage } = require('./lib/chat-history');
 const { generateReply } = require('./lib/ai');
+const { fetchRandomAnimal } = require('./lib/sources');
+const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -69,15 +71,37 @@ async function main() {
       console.log(`[${new Date().toISOString()}] ${userName}: ${userText}`);
 
       try {
-        const history = loadChatHistory();
-        const reply = await generateReply(GROQ_KEY, history, userText);
+        const chatHistory = loadChatHistory();
+        const result = await generateReply(GROQ_KEY, chatHistory, userText);
+        console.log(`[${new Date().toISOString()}] AI decision: ${result.type}${result.text ? ' -> ' + result.text.substring(0, 80) : ''}`);
 
-        await sendMessage(BOT_TOKEN, CHAT_ID, reply);
-        console.log(`[${new Date().toISOString()}] BubbleFubble: ${reply}`);
-
-        // Save both sides of the conversation
-        addMessage(history, 'user', userText);
-        addMessage(history, 'model', reply);
+        if (result.type === 'send_photo') {
+          // Fetch and send a new animal photo
+          const pexelsKey = process.env.PEXELS_API_KEY;
+          const photoHistory = loadHistory();
+          let photo = null;
+          for (let i = 0; i < 10; i++) {
+            const candidate = await fetchRandomAnimal(pexelsKey);
+            if (!isAlreadySent(photoHistory, candidate.id)) {
+              photo = candidate;
+              break;
+            }
+          }
+          if (photo) {
+            await sendPhoto(BOT_TOKEN, CHAT_ID, photo.url, '');
+            recordSent(photoHistory, photo);
+            console.log(`[${new Date().toISOString()}] BubbleFubble: [photo: ${photo.source}/${photo.id}]`);
+            addMessage(chatHistory, 'user', userText);
+            addMessage(chatHistory, 'model', '(sent a cute animal photo)');
+          } else {
+            await sendMessage(BOT_TOKEN, CHAT_ID, 'Hmm, ich konnte gerade kein neues Foto finden... versuch es gleich nochmal! 🙈');
+          }
+        } else {
+          await sendMessage(BOT_TOKEN, CHAT_ID, result.text);
+          console.log(`[${new Date().toISOString()}] BubbleFubble: ${result.text}`);
+          addMessage(chatHistory, 'user', userText);
+          addMessage(chatHistory, 'model', result.text);
+        }
       } catch (err) {
         console.error('Reply error:', err.message);
       }
