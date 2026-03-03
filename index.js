@@ -3,7 +3,9 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { fetchRandomAnimal } = require('./lib/sources');
 const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
-const { sendPhoto } = require('./lib/telegram');
+const { sendPhoto, sendMessage, sendPoll, sendQuiz } = require('./lib/telegram');
+const { generateText } = require('./lib/ai');
+const fm = require('./lib/feature-manager');
 
 const CAPTIONS = [
   'Guten Morgen! Hier ist deine tägliche Dosis Niedlichkeit',
@@ -22,6 +24,7 @@ async function main() {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   const pexelsKey = process.env.PEXELS_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
 
   if (!botToken || botToken === 'your_bot_token_here') {
     console.error('Set TELEGRAM_BOT_TOKEN in .env');
@@ -35,6 +38,10 @@ async function main() {
     console.error('Set PEXELS_API_KEY in .env (free at https://www.pexels.com/api/)');
     process.exit(1);
   }
+
+  // Load features
+  fm.loadFeatures();
+  fm.loadConfig();
 
   console.log(`[${new Date().toISOString()}] BubbleFubble starting...`);
 
@@ -68,6 +75,24 @@ async function main() {
   console.log('Photo sent!');
 
   recordSent(history, photo);
+
+  // Run feature hooks
+  const ctx = {
+    botToken,
+    chatId,
+    groqKey,
+    pexelsKey,
+    sendMessage,
+    sendPhoto,
+    sendPoll,
+    sendQuiz,
+    generateText: (prompt) => generateText(groqKey, prompt),
+    animal: photo.animal,
+  };
+
+  await fm.runHook('afterPhoto', ctx);
+  await fm.runHook('onDaily', ctx);
+
   console.log(`[${new Date().toISOString()}] Done.`);
 }
 

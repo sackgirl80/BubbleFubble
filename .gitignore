@@ -3,3 +3,4 @@ node_modules/
 logs/
 sent-photos.json
 chat-history.json
+features.json

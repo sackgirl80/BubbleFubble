@@ -116,9 +116,45 @@ rm ~/Library/LaunchAgents/com.bubblefubble.daily-animal-photo.plist
 rm ~/Library/LaunchAgents/com.bubblefubble.bot.plist
 ```
 
+## Features
+
+BubbleFubble has a pluggable feature system. Features can be enabled/disabled directly in the chat — just ask! Try saying "What features do you have?" or "Disable stickers".
+
+| Feature | Description | Default |
+|---------|-------------|---------|
+| Animal Facts | Sends a fun animal fact after each photo | On |
+| Daily Quiz | Sends an animal trivia question with the daily photo | On |
+| Time-based Mood | Adjusts tone based on time of day | On |
+| Emoji Reactions | Occasionally adds extra cute emoji reactions | On |
+| Photo of the Week | Sends a poll every Sunday to vote on the best photo | On |
+| Mood Check-in | Occasionally asks how you're doing, cheers you up | On |
+| Name the Animal | Asks you to name each animal and remembers the names | On |
+| Birthday Countdown | Counts down to your birthday with a special message on the day | On |
+
+### Adding new features
+
+Create a new file in `features/` that exports:
+
+```js
+module.exports = {
+  id: 'my_feature',
+  name: 'My Feature',
+  description: 'What it does',
+  defaultEnabled: true,
+  promptAddition: 'Instructions for the AI when this feature is enabled.',
+  tools: [],                          // Optional: extra AI tools
+  async afterPhoto(ctx) {},           // Optional: runs after a photo is sent
+  async onDaily(ctx) {},              // Optional: runs during daily photo
+  async handleTool(name, args, ctx) {} // Optional: handle custom tool calls
+};
+```
+
+The bot automatically loads all features from the `features/` directory on startup.
+
 ## How it works
 
 - **Image sources**: Pexels API (50% chance), The Cat API (25%), random.dog (25%). If one source fails, the others are tried as fallback.
 - **Duplicate prevention**: Every sent photo ID is recorded in `sent-photos.json`. The script retries up to 10 times if it draws a duplicate.
 - **Captions**: Random cheerful messages in German.
 - **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to Groq (Llama 3.3 70B, free tier) with a short conversation history (last 20 messages) for context. Replies match the language the recipient writes in.
+- **Feature system**: Features are loaded from `features/` and can be toggled on/off via chat. Each feature can add to the AI's system prompt, provide additional tools, and hook into photo and daily events.
