@@ -4,13 +4,13 @@ Send a random cute/funny animal photo via Telegram every day.
 
 BubbleFubble picks a random animal picture from the internet (Pexels, The Cat API, or random.dog), sends it to a Telegram chat with a cheerful German caption, and keeps track of what it has sent so you never get the same photo twice.
 
-If the recipient replies, BubbleFubble chats back using AI (Groq/Llama), responding in whatever language the recipient writes in.
+If the recipient replies, BubbleFubble chats back using AI (Anthropic Claude or Groq Llama — your choice), responding in whatever language the recipient writes in.
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or later)
 - A Telegram account
-- Free API keys (see below)
+- API keys (see below)
 
 ## Setup
 
@@ -168,5 +168,5 @@ The bot automatically loads all features from the `features/` directory on start
 - **Image sources**: Pexels API (50% chance), The Cat API (25%), random.dog (25%). If one source fails, the others are tried as fallback.
 - **Duplicate prevention**: Every sent photo ID is recorded in `sent-photos.json`. The script retries up to 10 times if it draws a duplicate.
 - **Captions**: Random cheerful messages in German.
-- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to your chosen AI provider (Anthropic Claude or Groq Llama) with conversation history (last 100 messages) for context. Replies match the language the recipient writes in.
+- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to your chosen AI provider (Anthropic Claude or Groq Llama) with conversation history for context (last 100 messages for Anthropic, 20 for Groq to stay within free tier limits). Replies match the language the recipient writes in.
 - **Feature system**: Features are loaded from `features/` and can be toggled on/off via chat. Each feature can add to the AI's system prompt, provide additional tools, and hook into photo and daily events.
