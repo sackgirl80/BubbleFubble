@@ -90,7 +90,7 @@ async function handleToolCall(toolName, args, chatHistory, userText) {
       await sendMessage(BOT_TOKEN, CHAT_ID, 'Hmm, ich konnte gerade kein neues Foto finden... versuch es gleich nochmal! 🙈');
     }
     addMessage(chatHistory, 'user', userText);
-    addMessage(chatHistory, 'model', '(sent a cute animal photo)');
+    addMessage(chatHistory, 'model', '[I used the send_photo tool to send a photo]');
     return;
   }
 

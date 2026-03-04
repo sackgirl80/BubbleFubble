@@ -9,12 +9,14 @@ module.exports = {
     const entries = Object.entries(names);
     let prompt =
       'NAME THE ANIMAL FEATURE: After a photo is sent, the system asks the user ' +
-      'to name the animal. When the user gives a name, use the save_animal_name tool ' +
-      'to remember it. Occasionally reference previously named animals in conversation.';
+      'to name the animal in the photo. When the user gives a name for an animal, ' +
+      'use the save_animal_name tool to remember it. These are names for ANIMALS ' +
+      'IN PHOTOS, not the user\'s own name. Occasionally reference previously named ' +
+      'animals in conversation in a fun way.';
     if (entries.length > 0) {
       const recent = entries.slice(-10);
       const list = recent.map(([, name]) => name).join(', ');
-      prompt += ` Previously named animals: ${list}.`;
+      prompt += ` Animals the user has named so far: ${list}. (These are pet/animal names, NOT the user's name.)`;
     }
     return prompt;
   },
