@@ -8,7 +8,7 @@ If the recipient replies, BubbleFubble chats back using AI (Anthropic Claude or 
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or later)
+- [Node.js](https://nodejs.org/) (v20 or later)
 - A Telegram account
 - API keys (see below)
 
