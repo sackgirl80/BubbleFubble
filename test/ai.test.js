@@ -55,6 +55,33 @@ describe('ai provider selection', () => {
     else delete process.env.GROQ_API_KEY;
   });
 
+  it('returns grok when AI_PROVIDER=grok', () => {
+    const saved = process.env.AI_PROVIDER;
+    process.env.AI_PROVIDER = 'grok';
+    delete require.cache[require.resolve('../lib/ai')];
+    const { getProvider } = require('../lib/ai');
+
+    assert.strictEqual(getProvider(), 'grok');
+    if (saved) process.env.AI_PROVIDER = saved;
+    else delete process.env.AI_PROVIDER;
+  });
+
+  it('getApiKey returns GROK_API_KEY for grok provider', () => {
+    const savedProvider = process.env.AI_PROVIDER;
+    const savedKey = process.env.GROK_API_KEY;
+    process.env.AI_PROVIDER = 'grok';
+    process.env.GROK_API_KEY = 'test-grok-key';
+    delete require.cache[require.resolve('../lib/ai')];
+    const { getApiKey } = require('../lib/ai');
+
+    assert.strictEqual(getApiKey(), 'test-grok-key');
+
+    if (savedProvider) process.env.AI_PROVIDER = savedProvider;
+    else delete process.env.AI_PROVIDER;
+    if (savedKey) process.env.GROK_API_KEY = savedKey;
+    else delete process.env.GROK_API_KEY;
+  });
+
   it('BASE_PROMPT contains key rules', () => {
     delete require.cache[require.resolve('../lib/ai')];
     const { BASE_PROMPT } = require('../lib/ai');

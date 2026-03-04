@@ -44,6 +44,7 @@ npm install
 | Provider | Quality | Cost | Signup |
 |----------|---------|------|--------|
 | **Anthropic (Claude Haiku)** | Excellent | ~$0.001/message | https://console.anthropic.com/ |
+| **Grok (xAI)** | Very good | $25 free credits on signup | https://console.x.ai/ |
 | **Groq (Llama 3.3 70B)** | Good | Free (100K tokens/day) | https://console.groq.com/keys |
 
 ### 5. Configure environment
@@ -59,12 +60,18 @@ TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here          # ← set in step 6 below
 PEXELS_API_KEY=your_pexels_api_key_here
 
-# Choose your AI provider: "anthropic" (recommended) or "groq"
+# Choose your AI provider: "anthropic" (recommended), "grok", or "groq"
 AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=your_key_here
 ```
 
-To use Groq instead:
+To use Grok (xAI) instead:
+```
+AI_PROVIDER=grok
+GROK_API_KEY=your_key_here
+```
+
+To use Groq (Llama) instead:
 ```
 AI_PROVIDER=groq
 GROQ_API_KEY=your_key_here
@@ -168,5 +175,5 @@ The bot automatically loads all features from the `features/` directory on start
 - **Image sources**: Pexels API (50% chance), The Cat API (25%), random.dog (25%). If one source fails, the others are tried as fallback.
 - **Duplicate prevention**: Every sent photo ID is recorded in `sent-photos.json`. The script retries up to 10 times if it draws a duplicate.
 - **Captions**: Random cheerful messages in German.
-- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to your chosen AI provider (Anthropic Claude or Groq Llama) with conversation history for context (last 100 messages for Anthropic, 20 for Groq to stay within free tier limits). Replies match the language the recipient writes in.
+- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to your chosen AI provider (Anthropic Claude, xAI Grok, or Groq Llama) with conversation history for context (last 100 messages for Anthropic/Grok, 20 for Groq to stay within free tier limits). Replies match the language the recipient writes in.
 - **Feature system**: Features are loaded from `features/` and can be toggled on/off via chat. Each feature can add to the AI's system prompt, provide additional tools, and hook into photo and daily events.
