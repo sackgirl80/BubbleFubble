@@ -37,10 +37,10 @@ function loadFM() {
 }
 
 describe('feature-manager', () => {
-  it('loads all 8 features', () => {
+  it('loads all 9 features', () => {
     const fm = loadFM();
     const list = fm.getFeatureList();
-    assert.strictEqual(list.length, 8);
+    assert.strictEqual(list.length, 9);
   });
 
   it('all features have required fields', () => {
