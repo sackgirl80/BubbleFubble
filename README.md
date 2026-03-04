@@ -149,6 +149,27 @@ BubbleFubble has a pluggable feature system. Features can be enabled/disabled di
 | Mood Check-in | Occasionally asks how you're doing, cheers you up | On |
 | Name the Animal | Asks you to name each animal and remembers the names | On |
 | Birthday Countdown | Counts down to your birthday with a special message on the day | On |
+| Credit Balance | Check remaining API credit balance (xAI/Grok) | On |
+
+### Credit balance
+
+The Credit Balance feature lets you ask the bot "How much credit do I have?" and it will check your prepaid balance live.
+
+**Supported providers:**
+- **Grok (xAI)** — shows prepaid credit balance
+- **Groq** — free tier, no balance to check
+- **Anthropic** — not yet supported (check manually at https://console.anthropic.com/)
+
+**Setup (xAI/Grok):**
+
+1. Go to https://console.x.ai/ → Settings → Management Keys
+2. Create a new management key
+3. Add to your `.env`:
+   ```
+   XAI_MANAGEMENT_KEY=your_management_key_here
+   XAI_TEAM_ID=your_team_id_here
+   ```
+   Your team ID is shown in the xAI console URL or in API key details.
 
 ### Adding new features
 
