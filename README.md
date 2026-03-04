@@ -167,9 +167,8 @@ The Credit Balance feature lets you ask the bot "How much credit do I have?" and
 3. Add to your `.env`:
    ```
    XAI_MANAGEMENT_KEY=your_management_key_here
-   XAI_TEAM_ID=your_team_id_here
    ```
-   Your team ID is shown in the xAI console URL or in API key details.
+   The team ID is auto-detected from your `GROK_API_KEY`. You can optionally set `XAI_TEAM_ID` to skip the auto-detection.
 
 ### Adding new features
 
