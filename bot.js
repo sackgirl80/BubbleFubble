@@ -172,15 +172,43 @@ async function main() {
       offset = update.update_id + 1;
 
       const msg = update.message;
-      if (!msg || !msg.text) continue;
+      if (!msg || (!msg.text && !msg.poll)) continue;
 
       if (String(msg.chat.id) !== String(CHAT_ID)) {
         console.log(`Ignoring message from chat ${msg.chat.id}`);
         continue;
       }
 
-      const userText = msg.text;
       const userName = msg.from?.first_name || 'User';
+
+      // Handle polls (Umfrage) — bots can't vote, so reply with a text message
+      if (msg.poll) {
+        const question = msg.poll.question;
+        const options = msg.poll.options.map((o) => o.text);
+        const optionsList = options.map((o, i) => `${i + 1}) ${o}`).join(' ');
+        console.log(`[${new Date().toISOString()}] ${userName}: [poll] ${question} — ${optionsList}`);
+
+        try {
+          const prompt =
+            `${userName} sent you a poll/Umfrage: "${question}". ` +
+            `The options are: ${optionsList}. ` +
+            `Pick one option and explain your choice briefly (1-2 sentences). ` +
+            `Be playful and fun. Use emoji. Reply in the same language as the question.`;
+          const reply = await generateText(AI_KEY, prompt);
+          if (reply) {
+            await sendMessage(BOT_TOKEN, CHAT_ID, reply);
+            console.log(`[${new Date().toISOString()}] BubbleFubble: ${reply}`);
+            const chatHistory = loadChatHistory();
+            addMessage(chatHistory, 'user', `[Poll: ${question} — ${optionsList}]`);
+            addMessage(chatHistory, 'model', reply);
+          }
+        } catch (err) {
+          console.error('Poll reply error:', err.message);
+        }
+        continue;
+      }
+
+      const userText = msg.text;
       console.log(`[${new Date().toISOString()}] ${userName}: ${userText}`);
 
       try {
