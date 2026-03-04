@@ -61,13 +61,34 @@ module.exports = {
   },
 };
 
+async function getTeamId() {
+  // Use explicit env var if set, otherwise auto-detect from the API key
+  if (process.env.XAI_TEAM_ID) return process.env.XAI_TEAM_ID;
+
+  const apiKey = process.env.GROK_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch('https://api.x.ai/v1/api-key', {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  return data.team_id || null;
+}
+
 async function checkGrokBalance() {
   const managementKey = process.env.XAI_MANAGEMENT_KEY;
-  const teamId = process.env.XAI_TEAM_ID;
 
-  if (!managementKey || !teamId) {
-    return 'xAI credit balance is not configured. Set XAI_MANAGEMENT_KEY and ' +
-      'XAI_TEAM_ID in your .env file. See https://github.com/sackgirl80/BubbleFubble#credit-balance';
+  if (!managementKey) {
+    return 'xAI credit balance is not configured. Set XAI_MANAGEMENT_KEY in ' +
+      'your .env file. See https://github.com/sackgirl80/BubbleFubble#credit-balance';
+  }
+
+  const teamId = await getTeamId();
+  if (!teamId) {
+    return 'Could not determine xAI team ID. Set XAI_TEAM_ID in your .env file ' +
+      'or ensure GROK_API_KEY is configured.';
   }
 
   try {
