@@ -31,6 +31,8 @@ Imagine waking up every morning to a surprise cute animal photo — a sleepy koa
 
 > *"BubbleFubble was built by a parent for their kid — and it shows. Every feature is designed to make a child smile."*
 
+**Completely free to run** — BubbleFubble works with [Groq](https://console.groq.com/keys), which provides open-source AI models at no cost. No subscriptions, no hidden fees, no credit card needed. Paid AI providers (Grok, Anthropic) are available as optional upgrades if you want them, but you absolutely don't need them.
+
 ## Quick Start
 
 ```bash
@@ -63,9 +65,11 @@ node bot.js              # start chatting
 
 | Provider | Quality | Cost | Signup |
 |:---------|:--------|:-----|:-------|
-| **Anthropic** (Claude Haiku) | Excellent | ~$0.001/msg | [console.anthropic.com](https://console.anthropic.com/) |
-| **Grok** (xAI) | Very good | $25 free credit | [console.x.ai](https://console.x.ai/) |
-| **Groq** (Llama 3.3 70B) | Good | Free (100K tokens/day) | [console.groq.com](https://console.groq.com/keys) |
+| **Groq** (Llama 3.3 70B) | Good | **Free forever** — no credit card | [console.groq.com](https://console.groq.com/keys) |
+| **Grok** (xAI) | Very good | Paid (optional) | [console.x.ai](https://console.x.ai/) |
+| **Anthropic** (Claude Haiku) | Excellent | Paid (optional) | [console.anthropic.com](https://console.anthropic.com/) |
+
+> Groq is the recommended starting point — it's completely free and works great!
 
 </details>
 
@@ -147,12 +151,14 @@ BubbleFubble comes with **15 features** — and you can turn any of them on or o
 | 😊 | **Mood Check-in** | Occasionally asks how you're doing and cheers you up |
 | 🌅 | **Time-based Mood** | The bot adjusts its tone based on the time of day |
 | ✨ | **Emoji Reactions** | Extra cute emoji reactions sprinkled into messages |
-| 💰 | **Credit Balance** | Ask the bot how much API credit you have left |
+| 💰 | **Credit Balance** | *Paid AI providers only* — ask the bot how much credit you have left |
 
 ### Credit balance
 
 <details>
-<summary>Setup for credit balance checking (optional)</summary>
+<summary>Setup for credit balance checking (optional — only for paid AI providers)</summary>
+
+> **BubbleFubble works completely free** using [Groq](https://console.groq.com/keys), which runs open-source AI models (Llama 3.3 70B) at no cost. Paid providers like Grok and Anthropic are optional upgrades — you never need them. This feature only applies if you *choose* to use a paid provider.
 
 The bot can check your xAI/Grok prepaid balance live. To enable:
 
