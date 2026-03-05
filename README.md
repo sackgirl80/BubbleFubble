@@ -10,17 +10,26 @@
 </p>
 
 <p align="center">
-  A Telegram bot that sends a cute animal photo every morning and chats back using AI.<br>
-  Built with pure Node.js — no frameworks, just fun.
+  <b>A friendly Telegram companion that brightens your morning with cute animals!</b><br>
+  Perfect for kids, families, or anyone who loves adorable animal photos.
 </p>
 
 ---
 
-## What does it do?
+## Meet BubbleFubble!
 
-Every morning, BubbleFubble picks a random cute animal photo from the internet and sends it to your Telegram chat with a cheerful German caption. If you reply, it chats back using AI — in whatever language you write in!
+Imagine waking up every morning to a surprise cute animal photo — a sleepy koala, a fluffy bunny, or a goofy dog. That's BubbleFubble! But it's more than just photos...
 
-It also comes packed with **15 fun features** like animal trivia, trading cards, guessing games, and an ongoing adventure story starring the animals you name.
+**BubbleFubble chats with you!** Reply in any language and it talks back — playful, silly, and always kind. It remembers your name, your favourite animals, and even counts down to your birthday.
+
+**It's packed with games and surprises:**
+- Can you **guess the animal** before the photo is revealed?
+- Collect **trading cards** with stats for every animal
+- Follow an **adventure story** starring the animals you name
+- Keep your **chat streak** alive — how many days in a row can you go?
+- Learn to say "cat" in Japanese, Swahili, or Icelandic
+
+> *"BubbleFubble was built by a parent for their kid — and it shows. Every feature is designed to make a child smile."*
 
 ## Quick Start
 
@@ -106,11 +115,11 @@ node bot.js      # starts the chat bot (Ctrl+C to stop)
 
 </details>
 
-## Features
+## All the Fun Stuff
 
-BubbleFubble has **15 features** you can enable or disable right in the chat! Just ask: *"What features do you have?"* or *"Disable stickers"*.
+BubbleFubble comes with **15 features** — and you can turn any of them on or off just by asking! Say *"What features do you have?"* or *"Disable stickers"* right in the chat.
 
-### Daily Photo Experience
+### Every Photo is an Adventure
 
 | | Feature | What it does |
 |:--|:--------|:-------------|
@@ -121,7 +130,7 @@ BubbleFubble has **15 features** you can enable or disable right in the chat! Ju
 | 🐾 | **Name the Animal** | Give each animal a name — the bot remembers them all! |
 | 🧠 | **Daily Quiz** | Animal trivia questions to test your knowledge |
 
-### Stories & Streaks
+### Keep Coming Back For More
 
 | | Feature | What it does |
 |:--|:--------|:-------------|
@@ -131,7 +140,7 @@ BubbleFubble has **15 features** you can enable or disable right in the chat! Ju
 | 🏆 | **Photo of the Week** | Vote on your favourite photo every Sunday |
 | 🎂 | **Birthday Countdown** | Counts down to your birthday with a special message on the day |
 
-### Chat & Mood
+### A Friend Who Cares
 
 | | Feature | What it does |
 |:--|:--------|:-------------|
@@ -191,19 +200,22 @@ rm ~/Library/LaunchAgents/com.bubblefubble.*.plist
 
 </details>
 
-## How it works
+## Under the Hood
+
+<details>
+<summary>For the curious and the tinkerers</summary>
 
 | | |
 |:--|:--|
 | **Photo sources** | Pexels (50%), The Cat API (25%), random.dog (25%) with automatic fallback |
-| **No duplicates** | Every photo ID is tracked in `sent-photos.json` — you'll never see the same one twice |
-| **AI chat** | Telegram long polling + your choice of AI provider with conversation history |
-| **Features** | Pluggable system loaded from `features/` — toggle on/off via chat |
+| **No duplicates** | Every photo ID is tracked — you'll never see the same one twice |
+| **AI chat** | Your choice of Anthropic Claude, xAI Grok, or Groq Llama |
+| **Features** | Pluggable system — toggle on/off via chat, or build your own! |
 | **Language** | The bot matches whatever language you write in |
 
-## Adding new features
+### Build your own features
 
-Create a file in `features/` — the bot loads it automatically on next restart:
+Create a file in `features/` and the bot picks it up automatically:
 
 ```js
 module.exports = {
@@ -219,8 +231,11 @@ module.exports = {
 };
 ```
 
+</details>
+
 ---
 
 <p align="center">
-  Made with love for daily smiles 🐾
+  Made with love for daily smiles 🐾<br>
+  <sub>Built by a parent, for a kid, with a lot of help from AI friends.</sub>
 </p>
