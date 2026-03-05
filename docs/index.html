@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BubbleFubble — Cute Animal Photos on Telegram</title>
+  <meta name="description" content="A friendly Telegram bot that sends a cute animal photo every morning, chats back using AI, and is packed with fun games and features for kids.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --mint: #a8e6cf;
+      --sky: #88d8f7;
+      --peach: #ffd3b6;
+      --pink: #ffaaa5;
+      --lavender: #d5b8ff;
+      --text: #2d3436;
+      --text-light: #636e72;
+      --white: #ffffff;
+      --bg: #fafffe;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--mint) 0%, var(--sky) 40%, var(--peach) 100%);
+      text-align: center;
+      padding: 3rem 1.5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.3) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(255,255,255,0.2) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero img {
+      max-width: 600px;
+      width: 100%;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 1.5rem;
+      position: relative;
+      z-index: 1;
+      opacity: 0.8;
+    }
+
+    .hero-tagline {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-top: 0.5rem;
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-light);
+      margin-top: 0.75rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .badge-free { background: #00b894; }
+    .badge-features { background: #e17055; }
+    .badge-node { background: #6c5ce7; }
+
+    .cta-row {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--white);
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--text);
+      border: 2px solid rgba(0,0,0,0.1);
+    }
+
+    /* Sections */
+    section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: var(--text-light);
+      font-size: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    /* What section */
+    .what-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .what-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      transition: transform 0.2s;
+    }
+
+    .what-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .what-card .emoji {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .what-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .what-card p {
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    /* Features */
+    .features-section {
+      background: linear-gradient(180deg, #f0fffe 0%, var(--bg) 100%);
+    }
+
+    .feature-group {
+      margin-bottom: 2.5rem;
+    }
+
+    .feature-group h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-left: 0.5rem;
+      border-left: 4px solid var(--mint);
+    }
+
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: var(--white);
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+
+    .feature-item .emoji {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .feature-item strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+
+    .feature-item span {
+      color: var(--text-light);
+      font-size: 0.85rem;
+    }
+
+    /* Free callout */
+    .free-callout {
+      background: linear-gradient(135deg, #e8f8f5 0%, #eaf6ff 100%);
+      border: 2px solid var(--mint);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      margin: 2rem 0;
+    }
+
+    .free-callout h3 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .free-callout p {
+      color: var(--text-light);
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    /* Quote */
+    .quote-section {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: linear-gradient(135deg, var(--peach) 0%, var(--pink) 100%);
+    }
+
+    .quote-section blockquote {
+      font-size: 1.3rem;
+      font-weight: 600;
+      font-style: italic;
+      max-width: 600px;
+      margin: 0 auto;
+      color: var(--text);
+    }
+
+    .quote-section .attr {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--text-light);
+      font-style: normal;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .hero { padding: 2rem 1rem 1.5rem; }
+      .hero-tagline { font-size: 1.3rem; }
+      .section-title { font-size: 1.6rem; }
+      .what-grid { grid-template-columns: 1fr; }
+      .feature-list { grid-template-columns: 1fr; }
+      .btn { padding: 0.65rem 1.5rem; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <img src="banner.png" alt="BubbleFubble — cute cartoon animals with bubbles">
+    <h1>Your daily dose of cute animals on Telegram</h1>
+    <p class="hero-tagline">A friendly companion that brightens every morning with adorable animal photos, games, and AI-powered chat</p>
+    <p class="hero-sub">Perfect for kids, families, or anyone who loves animals</p>
+    <div class="badge-row">
+      <span class="badge badge-free">100% Free</span>
+      <span class="badge badge-features">15 Features</span>
+      <span class="badge badge-node">Node.js</span>
+    </div>
+    <div class="cta-row">
+      <a href="https://github.com/sackgirl80/BubbleFubble" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/sackgirl80/BubbleFubble#all-the-fun-stuff" class="btn btn-secondary">See All Features</a>
+    </div>
+  </div>
+
+  <!-- What is it -->
+  <section>
+    <h2 class="section-title">What is BubbleFubble?</h2>
+    <p class="section-sub">More than a photo bot — it's a daily adventure</p>
+
+    <div class="what-grid">
+      <div class="what-card">
+        <div class="emoji">📸</div>
+        <h3>Morning Surprise</h3>
+        <p>Wake up to a new cute animal photo every day — koalas, bunnies, puppies, and more. Never the same photo twice.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">💬</div>
+        <h3>Chat Like a Friend</h3>
+        <p>Reply in any language and BubbleFubble chats back — playful, silly, and always kind. It remembers your name, your animals, and your birthday.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">🎮</div>
+        <h3>Games & Quizzes</h3>
+        <p>Guess the animal before the photo is revealed, answer trivia, collect trading cards, and keep your chat streak going.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">📖</div>
+        <h3>Your Own Story</h3>
+        <p>Name every animal you receive and watch them star in an ongoing adventure story that grows with a new chapter each day.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">🌍</div>
+        <h3>Learn While Playing</h3>
+        <p>Discover fun animal facts and learn what each animal is called in Japanese, Swahili, Icelandic, and more.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">😊</div>
+        <h3>Always Caring</h3>
+        <p>The bot checks in on how you're feeling, adjusts its mood to the time of day, and sends extra cute photos when you're down.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Free callout -->
+  <section style="padding-top: 0;">
+    <div class="free-callout">
+      <h3>Completely Free to Run</h3>
+      <p>BubbleFubble uses open-source AI models via Groq — no subscriptions, no credit card, no hidden fees. Ever. Paid AI providers are available as optional upgrades, but you absolutely don't need them.</p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features-section">
+    <h2 class="section-title">All the Fun Stuff</h2>
+    <p class="section-sub">15 features you can toggle on and off just by asking</p>
+
+    <div class="feature-group">
+      <h3>Every Photo is an Adventure</h3>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="emoji">🔎</div>
+          <div><strong>Guess the Animal</strong><span>A poll before each photo — can you guess from 5 choices?</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🃏</div>
+          <div><strong>Trading Cards</strong><span>Collectible stat cards — cuteness, fluffiness, speed</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">💡</div>
+          <div><strong>Animal Facts</strong><span>A fun, surprising fact about every animal</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🌍</div>
+          <div><strong>Multilingual Vocab</strong><span>Learn the animal's name in 5 different languages</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🐾</div>
+          <div><strong>Name the Animal</strong><span>Give each animal a name — the bot remembers them all</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🧠</div>
+          <div><strong>Daily Quiz</strong><span>Animal trivia questions to test your knowledge</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-group">
+      <h3>Keep Coming Back For More</h3>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="emoji">📖</div>
+          <div><strong>Story Mode</strong><span>An ongoing adventure starring all your named animals</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🔥</div>
+          <div><strong>Chat Streak</strong><span>How many days in a row can you go?</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">📋</div>
+          <div><strong>Weekly Recap</strong><span>Every Sunday: a summary of the week's highlights</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🏆</div>
+          <div><strong>Photo of the Week</strong><span>Vote on your favourite photo every Sunday</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🎂</div>
+          <div><strong>Birthday Countdown</strong><span>A special message when the big day arrives</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-group">
+      <h3>A Friend Who Cares</h3>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="emoji">😊</div>
+          <div><strong>Mood Check-in</strong><span>Asks how you're doing and cheers you up</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">🌅</div>
+          <div><strong>Time-based Mood</strong><span>Adjusts its tone based on the time of day</span></div>
+        </div>
+        <div class="feature-item">
+          <div class="emoji">✨</div>
+          <div><strong>Emoji Reactions</strong><span>Cute emoji sprinkled into messages</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <div class="quote-section">
+    <blockquote>"BubbleFubble was built by a parent for their kid — and it shows. Every feature is designed to make a child smile."</blockquote>
+  </div>
+
+  <!-- Get started -->
+  <section style="text-align: center;">
+    <h2 class="section-title">Ready to get started?</h2>
+    <p class="section-sub">Set up takes about 5 minutes. All you need is Node.js and a Telegram account.</p>
+    <div class="cta-row" style="justify-content: center;">
+      <a href="https://github.com/sackgirl80/BubbleFubble#quick-start" class="btn btn-primary">View Setup Guide</a>
+      <a href="https://github.com/sackgirl80/BubbleFubble" class="btn btn-secondary">GitHub Repo</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>Made with love for daily smiles 🐾</p>
+    <p>Built by a parent, for a kid, with a lot of help from AI friends.</p>
+    <p style="margin-top: 0.5rem;"><a href="https://github.com/sackgirl80/BubbleFubble">GitHub</a></p>
+  </footer>
+
+</body>
+</html>
