@@ -150,6 +150,38 @@ async function handleToolCall(toolName, args, chatHistory, userText) {
   console.warn(`Unknown tool call: ${toolName}`);
 }
 
+async function handlePollAnswer(pollAnswer) {
+  // Reload config from disk since index.js (separate process) may have written the pending guess
+  fm.loadConfig();
+
+  const guessFeature = fm.findFeatureForTool('reveal_animal') ||
+    require('./features/guess-the-animal');
+
+  if (typeof guessFeature.onPollAnswer !== 'function') return;
+
+  const ctx = makeCtx();
+  ctx.pollId = pollAnswer.poll_id;
+  ctx.optionIds = pollAnswer.option_ids;
+  ctx.loadFeatureData = () => fm.getFeatureData('guess_the_animal');
+  ctx.saveFeatureData = (data) => fm.setFeatureData('guess_the_animal', data);
+  ctx.recordSent = (photo) => {
+    const history = loadHistory();
+    recordSent(history, photo);
+  };
+  ctx.runAfterPhoto = async (animal) => {
+    const hookCtx = makeCtx();
+    hookCtx.animal = animal;
+    await fm.runHook('afterPhoto', hookCtx);
+  };
+
+  try {
+    await guessFeature.onPollAnswer(ctx);
+    console.log(`[${new Date().toISOString()}] Guess poll answered`);
+  } catch (err) {
+    console.error('Poll answer error:', err.message);
+  }
+}
+
 async function main() {
   console.log(`[${new Date().toISOString()}] BubbleFubble bot listening...`);
 
@@ -170,6 +202,12 @@ async function main() {
 
     for (const update of updates) {
       offset = update.update_id + 1;
+
+      // Handle poll answers (e.g. guess the animal)
+      if (update.poll_answer) {
+        await handlePollAnswer(update.poll_answer);
+        continue;
+      }
 
       const msg = update.message;
       if (!msg || (!msg.text && !msg.poll)) continue;
@@ -210,6 +248,12 @@ async function main() {
 
       const userText = msg.text;
       console.log(`[${new Date().toISOString()}] ${userName}: ${userText}`);
+
+      // Run onMessage hooks for features that need to track user activity
+      const msgCtx = makeCtx();
+      msgCtx.userName = userName;
+      msgCtx.userText = userText;
+      await fm.runHook('onMessage', msgCtx);
 
       try {
         const chatHistory = loadChatHistory();

@@ -69,14 +69,7 @@ async function main() {
 
   console.log(`Selected: ${photo.source} / ${photo.id}`);
 
-  const caption = CAPTIONS[Math.floor(Math.random() * CAPTIONS.length)];
-
-  await sendPhoto(botToken, chatId, photo.url, caption);
-  console.log('Photo sent!');
-
-  recordSent(history, photo);
-
-  // Run feature hooks
+  // Build context for feature hooks
   const ctx = {
     botToken,
     chatId,
@@ -88,9 +81,26 @@ async function main() {
     sendQuiz,
     generateText: (prompt) => generateText(aiKey, prompt),
     animal: photo.animal,
+    photoUrl: photo.url,
+    photoId: photo.id,
+    photoSource: photo.source,
   };
 
-  await fm.runHook('afterPhoto', ctx);
+  // Run beforePhoto hooks (e.g. guess the animal poll)
+  await fm.runHook('beforePhoto', ctx);
+
+  // Check if guess feature delayed the photo (waiting for user to answer poll)
+  const guessData = fm.getFeatureData('guess_the_animal');
+  if (guessData.pendingGuess) {
+    console.log('Photo delayed — waiting for guess poll answer');
+  } else {
+    const caption = CAPTIONS[Math.floor(Math.random() * CAPTIONS.length)];
+    await sendPhoto(botToken, chatId, photo.url, caption);
+    console.log('Photo sent!');
+    recordSent(history, photo);
+    await fm.runHook('afterPhoto', ctx);
+  }
+
   await fm.runHook('onDaily', ctx);
 
   console.log(`[${new Date().toISOString()}] Done.`);
