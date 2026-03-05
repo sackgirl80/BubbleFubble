@@ -1,107 +1,161 @@
-# BubbleFubble
+<p align="center">
+  <img src="assets/banner.png" alt="BubbleFubble" width="700"/>
+</p>
 
-Send a random cute/funny animal photo via Telegram every day.
+<p align="center">
+  <a href="https://github.com/sackgirl80/BubbleFubble/actions"><img src="https://github.com/sackgirl80/BubbleFubble/actions/workflows/test.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node.js">
+  <img src="https://img.shields.io/badge/dependencies-1%20(dotenv)-blue" alt="Dependencies">
+  <img src="https://img.shields.io/badge/features-15-orange" alt="Features">
+</p>
 
-BubbleFubble picks a random animal picture from the internet (Pexels, The Cat API, or random.dog), sends it to a Telegram chat with a cheerful German caption, and keeps track of what it has sent so you never get the same photo twice.
+<p align="center">
+  A Telegram bot that sends a cute animal photo every morning and chats back using AI.<br>
+  Built with pure Node.js — no frameworks, just fun.
+</p>
 
-If the recipient replies, BubbleFubble chats back using AI (Anthropic Claude or Groq Llama — your choice), responding in whatever language the recipient writes in.
+---
 
-## Prerequisites
+## What does it do?
 
-- [Node.js](https://nodejs.org/) (v20 or later)
-- A Telegram account
-- API keys (see below)
+Every morning, BubbleFubble picks a random cute animal photo from the internet and sends it to your Telegram chat with a cheerful German caption. If you reply, it chats back using AI — in whatever language you write in!
 
-## Setup
+It also comes packed with **15 fun features** like animal trivia, trading cards, guessing games, and an ongoing adventure story starring the animals you name.
 
-### 1. Clone the repo
+## Quick Start
 
 ```bash
 git clone git@github.com:sackgirl80/BubbleFubble.git
 cd BubbleFubble
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
+cp .env.example .env    # then fill in your keys (see Setup below)
+node index.js            # send a test photo
+node bot.js              # start chatting
 ```
 
-### 3. Create a Telegram bot
+## Setup
+
+<details>
+<summary><b>1. Create a Telegram bot</b></summary>
 
 1. Open Telegram and search for `@BotFather`
-2. Send `/newbot` and follow the prompts to create your bot
+2. Send `/newbot` and follow the prompts
 3. Copy the **bot token** you receive
 
-### 4. Get API keys
+</details>
 
-**Pexels** (animal photos):
-1. Sign up at https://www.pexels.com/api/ (free, no credit card)
-2. Copy your API key
+<details>
+<summary><b>2. Get API keys</b></summary>
+
+**Pexels** (animal photos) — free, no credit card:
+- Sign up at https://www.pexels.com/api/ and copy your API key
 
 **AI provider** (chat replies) — choose one:
 
 | Provider | Quality | Cost | Signup |
-|----------|---------|------|--------|
-| **Anthropic (Claude Haiku)** | Excellent | ~$0.001/message | https://console.anthropic.com/ |
-| **Grok (xAI)** | Very good | $25 free credits on signup | https://console.x.ai/ |
-| **Groq (Llama 3.3 70B)** | Good | Free (100K tokens/day) | https://console.groq.com/keys |
+|:---------|:--------|:-----|:-------|
+| **Anthropic** (Claude Haiku) | Excellent | ~$0.001/msg | [console.anthropic.com](https://console.anthropic.com/) |
+| **Grok** (xAI) | Very good | $25 free credit | [console.x.ai](https://console.x.ai/) |
+| **Groq** (Llama 3.3 70B) | Good | Free (100K tokens/day) | [console.groq.com](https://console.groq.com/keys) |
 
-### 5. Configure environment
+</details>
+
+<details>
+<summary><b>3. Configure your .env file</b></summary>
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your values (leave `TELEGRAM_CHAT_ID` as-is for now — you'll set it in step 6):
+Fill in your values:
 
-```
+```env
 TELEGRAM_BOT_TOKEN=your_bot_token_here
-TELEGRAM_CHAT_ID=your_chat_id_here          # ← set in step 6 below
+TELEGRAM_CHAT_ID=your_chat_id_here          # set in step 4
 PEXELS_API_KEY=your_pexels_api_key_here
 
-# Choose your AI provider: "anthropic" (recommended), "grok", or "groq"
-AI_PROVIDER=anthropic
-ANTHROPIC_API_KEY=your_key_here
-```
-
-To use Grok (xAI) instead:
-```
-AI_PROVIDER=grok
+# Choose one AI provider:
+AI_PROVIDER=grok                             # or "anthropic" or "groq"
 GROK_API_KEY=your_key_here
+# ANTHROPIC_API_KEY=your_key_here
+# GROQ_API_KEY=your_key_here
 ```
 
-To use Groq (Llama) instead:
-```
-AI_PROVIDER=groq
-GROQ_API_KEY=your_key_here
-```
+</details>
 
-### 6. Get the recipient's chat ID
+<details>
+<summary><b>4. Get the chat ID</b></summary>
 
-The recipient needs to open your bot in Telegram and send `/start`. Then run:
+The recipient opens your bot in Telegram and sends `/start`. Then run:
 
 ```bash
 node get-chat-id.js
 ```
 
-This prints the chat ID. Add it to `.env` as `TELEGRAM_CHAT_ID`.
+Copy the chat ID into `.env` as `TELEGRAM_CHAT_ID`.
 
-### 7. Test the daily photo
+</details>
 
-```bash
-node index.js
-```
-
-The recipient should receive a cute animal photo.
-
-### 8. Test chat replies
+<details>
+<summary><b>5. Test it!</b></summary>
 
 ```bash
-node bot.js
+node index.js    # sends a cute animal photo
+node bot.js      # starts the chat bot (Ctrl+C to stop)
 ```
 
-Send a message to the bot from Telegram — it should reply using AI. Press `Ctrl+C` to stop.
+</details>
+
+## Features
+
+BubbleFubble has **15 features** you can enable or disable right in the chat! Just ask: *"What features do you have?"* or *"Disable stickers"*.
+
+### Daily Photo Experience
+
+| | Feature | What it does |
+|:--|:--------|:-------------|
+| 🔎 | **Guess the Animal** | A poll before each photo — can you guess the animal from 5 choices? |
+| 🃏 | **Trading Cards** | Collectible stat cards for each animal (cuteness, fluffiness, speed...) |
+| 💡 | **Animal Facts** | A fun, surprising animal fact after each photo |
+| 🌍 | **Multilingual Vocab** | Learn what the animal is called in 5 different languages |
+| 🐾 | **Name the Animal** | Give each animal a name — the bot remembers them all! |
+| 🧠 | **Daily Quiz** | Animal trivia questions to test your knowledge |
+
+### Stories & Streaks
+
+| | Feature | What it does |
+|:--|:--------|:-------------|
+| 📖 | **Story Mode** | An ongoing adventure story starring all the animals you've named |
+| 🔥 | **Chat Streak** | Tracks how many days in a row you've chatted — don't break the streak! |
+| 📋 | **Weekly Recap** | Every Sunday: a summary of the week's animals, names, and highlights |
+| 🏆 | **Photo of the Week** | Vote on your favourite photo every Sunday |
+| 🎂 | **Birthday Countdown** | Counts down to your birthday with a special message on the day |
+
+### Chat & Mood
+
+| | Feature | What it does |
+|:--|:--------|:-------------|
+| 😊 | **Mood Check-in** | Occasionally asks how you're doing and cheers you up |
+| 🌅 | **Time-based Mood** | The bot adjusts its tone based on the time of day |
+| ✨ | **Emoji Reactions** | Extra cute emoji reactions sprinkled into messages |
+| 💰 | **Credit Balance** | Ask the bot how much API credit you have left |
+
+### Credit balance
+
+<details>
+<summary>Setup for credit balance checking (optional)</summary>
+
+The bot can check your xAI/Grok prepaid balance live. To enable:
+
+1. Go to [console.x.ai](https://console.x.ai/) → Settings → Management Keys
+2. Create a new management key
+3. Add to `.env`:
+   ```
+   XAI_MANAGEMENT_KEY=your_management_key_here
+   ```
+   The team ID is auto-detected from your `GROK_API_KEY`.
+
+</details>
 
 ## Schedule daily runs (macOS)
 
@@ -109,70 +163,47 @@ Send a message to the bot from Telegram — it should reply using AI. Press `Ctr
 bash setup.sh
 ```
 
-This installs two macOS launchd agents:
-- **Daily photo** — runs at 6:30 AM (catches up after sleep)
-- **Chat bot** — runs continuously, restarts if it crashes
+This installs two background services:
+- **Daily photo** at 6:30 AM (catches up if your Mac was asleep)
+- **Chat bot** runs continuously, auto-restarts if it crashes
 
-To change the photo time, edit the `Hour` and `Minute` values in `setup.sh` before running it.
+<details>
+<summary>Managing the schedule</summary>
 
-You can also run `node index.js` manually at any time for an extra photo.
+**Change photo time:** Edit the `Hour` and `Minute` values in `setup.sh` before running it.
 
-### Check logs
+**Send an extra photo:** `node index.js`
 
+**Restart the bot:** `launchctl kickstart -k gui/$(id -u)/com.bubblefubble.bot`
+
+**Check logs:**
 ```bash
-cat logs/bubblefubble.log        # daily photo log
-cat logs/bubblefubble-error.log
-cat logs/bot.log                  # chat bot log
-cat logs/bot-error.log
+cat logs/bubblefubble.log        # daily photo
+cat logs/bot.log                  # chat bot
 ```
 
-### Uninstall the schedule
-
+**Uninstall:**
 ```bash
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.bubblefubble.daily-animal-photo.plist
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.bubblefubble.bot.plist
-rm ~/Library/LaunchAgents/com.bubblefubble.daily-animal-photo.plist
-rm ~/Library/LaunchAgents/com.bubblefubble.bot.plist
+rm ~/Library/LaunchAgents/com.bubblefubble.*.plist
 ```
 
-## Features
+</details>
 
-BubbleFubble has a pluggable feature system. Features can be enabled/disabled directly in the chat — just ask! Try saying "What features do you have?" or "Disable stickers".
+## How it works
 
-| Feature | Description | Default |
-|---------|-------------|---------|
-| Animal Facts | Sends a fun animal fact after each photo | On |
-| Daily Quiz | Sends an animal trivia question with the daily photo | On |
-| Time-based Mood | Adjusts tone based on time of day | On |
-| Emoji Reactions | Occasionally adds extra cute emoji reactions | On |
-| Photo of the Week | Sends a poll every Sunday to vote on the best photo | On |
-| Mood Check-in | Occasionally asks how you're doing, cheers you up | On |
-| Name the Animal | Asks you to name each animal and remembers the names | On |
-| Birthday Countdown | Counts down to your birthday with a special message on the day | On |
-| Credit Balance | Check remaining API credit balance (xAI/Grok) | On |
+| | |
+|:--|:--|
+| **Photo sources** | Pexels (50%), The Cat API (25%), random.dog (25%) with automatic fallback |
+| **No duplicates** | Every photo ID is tracked in `sent-photos.json` — you'll never see the same one twice |
+| **AI chat** | Telegram long polling + your choice of AI provider with conversation history |
+| **Features** | Pluggable system loaded from `features/` — toggle on/off via chat |
+| **Language** | The bot matches whatever language you write in |
 
-### Credit balance
+## Adding new features
 
-The Credit Balance feature lets you ask the bot "How much credit do I have?" and it will check your prepaid balance live.
-
-**Supported providers:**
-- **Grok (xAI)** — shows prepaid credit balance
-- **Groq** — free tier, no balance to check
-- **Anthropic** — not yet supported (check manually at https://console.anthropic.com/)
-
-**Setup (xAI/Grok):**
-
-1. Go to https://console.x.ai/ → Settings → Management Keys
-2. Create a new management key
-3. Add to your `.env`:
-   ```
-   XAI_MANAGEMENT_KEY=your_management_key_here
-   ```
-   The team ID is auto-detected from your `GROK_API_KEY`. You can optionally set `XAI_TEAM_ID` to skip the auto-detection.
-
-### Adding new features
-
-Create a new file in `features/` that exports:
+Create a file in `features/` — the bot loads it automatically on next restart:
 
 ```js
 module.exports = {
@@ -188,12 +219,8 @@ module.exports = {
 };
 ```
 
-The bot automatically loads all features from the `features/` directory on startup.
+---
 
-## How it works
-
-- **Image sources**: Pexels API (50% chance), The Cat API (25%), random.dog (25%). If one source fails, the others are tried as fallback.
-- **Duplicate prevention**: Every sent photo ID is recorded in `sent-photos.json`. The script retries up to 10 times if it draws a duplicate.
-- **Captions**: Random cheerful messages in German.
-- **Chat replies**: The bot listens for incoming messages via Telegram long polling. Messages are sent to your chosen AI provider (Anthropic Claude, xAI Grok, or Groq Llama) with conversation history for context (last 100 messages for Anthropic/Grok, 20 for Groq to stay within free tier limits). Replies match the language the recipient writes in.
-- **Feature system**: Features are loaded from `features/` and can be toggled on/off via chat. Each feature can add to the AI's system prompt, provide additional tools, and hook into photo and daily events.
+<p align="center">
+  Made with love for daily smiles 🐾
+</p>
