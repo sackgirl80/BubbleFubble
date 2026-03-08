@@ -136,6 +136,9 @@ async function handleToolCall(chatId, toolName, args, chatHistory, userText) {
     const ctx = makeCtx(chatId);
     ctx.loadFeatureData = () => fm.getFeatureData(chatId, feature.id);
     ctx.saveFeatureData = (data) => fm.setFeatureData(chatId, feature.id, data);
+    ctx.getFeatureData = (fId) => fm.getFeatureData(chatId, fId);
+    ctx.getProvider = () => resolveProvider(chatId);
+    ctx.loadPhotoHistory = () => loadHistory(chatId);
     const result = await feature.handleTool(toolName, args, ctx);
     if (result) {
       const reply = await generateText(
