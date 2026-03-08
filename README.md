@@ -5,14 +5,22 @@
 <p align="center">
   <a href="https://github.com/sackgirl80/BubbleFubble/actions"><img src="https://github.com/sackgirl80/BubbleFubble/actions/workflows/test.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node.js">
-  <img src="https://img.shields.io/badge/dependencies-1%20(dotenv)-blue" alt="Dependencies">
-  <img src="https://img.shields.io/badge/features-15-orange" alt="Features">
+  <img src="https://img.shields.io/badge/dependencies-2-blue" alt="Dependencies">
+  <img src="https://img.shields.io/badge/features-16-orange" alt="Features">
 </p>
 
 <p align="center">
   <b>A friendly Telegram companion that brightens your morning with cute animals!</b><br>
   Perfect for kids, families, or anyone who loves adorable animal photos.
 </p>
+
+---
+
+## Try it now!
+
+**No setup needed** — just open Telegram and search for **[@BubbleFubbleBot](https://t.me/BubbleFubbleBot)**, then send `/start`. You'll get a daily cute animal photo, games, and an AI friend to chat with. It's completely free!
+
+Want to run your own instance instead? Keep reading.
 
 ---
 
@@ -202,6 +210,39 @@ cat logs/bot.log                  # chat bot
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.bubblefubble.daily-animal-photo.plist
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.bubblefubble.bot.plist
 rm ~/Library/LaunchAgents/com.bubblefubble.*.plist
+```
+
+</details>
+
+## Schedule daily runs (Linux)
+
+```bash
+bash setup-linux.sh
+```
+
+This installs two systemd user services:
+- **Chat bot** runs continuously, auto-restarts if it crashes
+- **Daily photo** at 6:30 AM via systemd timer
+
+<details>
+<summary>Managing on Linux</summary>
+
+**Check status:** `systemctl --user status bubblefubble-bot`
+
+**Restart bot:** `systemctl --user restart bubblefubble-bot`
+
+**Trigger daily photo now:** `systemctl --user start bubblefubble-daily`
+
+**Follow logs:** `journalctl --user -u bubblefubble-bot -f`
+
+**Deploy updates:** `bash deploy.sh`
+
+**Uninstall:**
+```bash
+systemctl --user stop bubblefubble-bot bubblefubble-daily.timer
+systemctl --user disable bubblefubble-bot bubblefubble-daily.timer
+rm ~/.config/systemd/user/bubblefubble-*
+systemctl --user daemon-reload
 ```
 
 </details>

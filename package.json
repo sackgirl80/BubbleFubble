@@ -10,6 +10,7 @@
     "test": "node --test test/feature-manager.test.js test/history.test.js test/chat-history.test.js test/ai.test.js"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
     "dotenv": "^16.4.0"
   }
 }

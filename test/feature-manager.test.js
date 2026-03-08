@@ -1,23 +1,22 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const path = require('path');
+const { getDb } = require('../lib/db');
 
 const TEST_CHAT_ID = 'test-chat-789';
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const USER_DIR = path.join(DATA_DIR, TEST_CHAT_ID);
-const CONFIG_PATH = path.join(USER_DIR, 'features.json');
 
 beforeEach(() => {
-  fs.mkdirSync(USER_DIR, { recursive: true });
-  try { fs.unlinkSync(CONFIG_PATH); } catch {}
+  const db = getDb();
+  db.prepare('DELETE FROM feature_config WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('DELETE FROM feature_data WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('INSERT OR IGNORE INTO users (chat_id, first_name) VALUES (?, ?)').run(TEST_CHAT_ID, 'Test');
   delete require.cache[require.resolve('../lib/feature-manager')];
-  delete require.cache[require.resolve('../lib/users')];
 });
 
 afterEach(() => {
-  try { fs.unlinkSync(CONFIG_PATH); } catch {}
-  try { fs.rmdirSync(USER_DIR); } catch {}
+  const db = getDb();
+  db.prepare('DELETE FROM feature_config WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('DELETE FROM feature_data WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('DELETE FROM users WHERE chat_id = ?').run(TEST_CHAT_ID);
 });
 
 function loadFM() {
@@ -73,11 +72,10 @@ describe('feature-manager', () => {
     assert.strictEqual(result, null);
   });
 
-  it('config persists to disk', () => {
+  it('config persists to database', () => {
     const fm = loadFM();
     fm.toggle(TEST_CHAT_ID, 'stickers');
 
-    // Reload from disk
     const fm2 = loadFM();
     assert.strictEqual(fm2.isEnabled(TEST_CHAT_ID, 'stickers'), false);
   });
