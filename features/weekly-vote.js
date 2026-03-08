@@ -1,5 +1,3 @@
-const { loadHistory } = require('../lib/history');
-
 module.exports = {
   id: 'weekly_vote',
   name: 'Photo of the Week',
@@ -12,7 +10,7 @@ module.exports = {
     if (now.getDay() !== 0) return;
 
     try {
-      const history = loadHistory();
+      const history = ctx.loadPhotoHistory();
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const weekPhotos = history.sent.filter(

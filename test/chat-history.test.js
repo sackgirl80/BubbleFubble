@@ -3,38 +3,34 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 
-const HISTORY_PATH = path.join(__dirname, '..', 'chat-history.json');
-let savedHistory;
+const TEST_CHAT_ID = 'test-chat-123';
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const USER_DIR = path.join(DATA_DIR, TEST_CHAT_ID);
+const HISTORY_PATH = path.join(USER_DIR, 'chat-history.json');
 
 beforeEach(() => {
-  try {
-    savedHistory = fs.readFileSync(HISTORY_PATH, 'utf8');
-  } catch {
-    savedHistory = null;
-  }
+  fs.mkdirSync(USER_DIR, { recursive: true });
   try { fs.unlinkSync(HISTORY_PATH); } catch {}
   delete require.cache[require.resolve('../lib/chat-history')];
+  delete require.cache[require.resolve('../lib/users')];
 });
 
 afterEach(() => {
-  if (savedHistory !== null) {
-    fs.writeFileSync(HISTORY_PATH, savedHistory);
-  } else {
-    try { fs.unlinkSync(HISTORY_PATH); } catch {}
-  }
+  try { fs.unlinkSync(HISTORY_PATH); } catch {}
+  try { fs.rmdirSync(USER_DIR); } catch {}
 });
 
 describe('chat-history', () => {
   it('loadChatHistory returns empty messages when no file', () => {
     const { loadChatHistory } = require('../lib/chat-history');
-    const h = loadChatHistory();
+    const h = loadChatHistory(TEST_CHAT_ID);
     assert.deepStrictEqual(h, { messages: [] });
   });
 
   it('addMessage adds entry with timestamp', () => {
     const { loadChatHistory, addMessage } = require('../lib/chat-history');
-    const h = loadChatHistory();
-    addMessage(h, 'user', 'hello');
+    const h = loadChatHistory(TEST_CHAT_ID);
+    addMessage(TEST_CHAT_ID, h, 'user', 'hello');
 
     assert.strictEqual(h.messages.length, 1);
     assert.strictEqual(h.messages[0].role, 'user');
@@ -44,10 +40,10 @@ describe('chat-history', () => {
 
   it('trims to MAX_MESSAGES', () => {
     const { loadChatHistory, addMessage } = require('../lib/chat-history');
-    const h = loadChatHistory();
+    const h = loadChatHistory(TEST_CHAT_ID);
 
     for (let i = 0; i < 110; i++) {
-      addMessage(h, 'user', `message ${i}`);
+      addMessage(TEST_CHAT_ID, h, 'user', `message ${i}`);
     }
 
     assert.strictEqual(h.messages.length, 100);
@@ -57,13 +53,13 @@ describe('chat-history', () => {
 
   it('persists to disk', () => {
     const { loadChatHistory, addMessage } = require('../lib/chat-history');
-    const h = loadChatHistory();
-    addMessage(h, 'user', 'test');
-    addMessage(h, 'model', 'reply');
+    const h = loadChatHistory(TEST_CHAT_ID);
+    addMessage(TEST_CHAT_ID, h, 'user', 'test');
+    addMessage(TEST_CHAT_ID, h, 'model', 'reply');
 
     delete require.cache[require.resolve('../lib/chat-history')];
     const { loadChatHistory: reload } = require('../lib/chat-history');
-    const h2 = reload();
+    const h2 = reload(TEST_CHAT_ID);
     assert.strictEqual(h2.messages.length, 2);
     assert.strictEqual(h2.messages[0].text, 'test');
     assert.strictEqual(h2.messages[1].text, 'reply');

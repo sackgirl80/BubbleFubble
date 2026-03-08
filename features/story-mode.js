@@ -1,5 +1,3 @@
-const fm = require('../lib/feature-manager');
-
 module.exports = {
   id: 'story_mode',
   name: 'Story Mode',
@@ -19,7 +17,7 @@ module.exports = {
 
   async onDaily(ctx) {
     // Get named animals from the name_the_animal feature
-    const nameData = fm.getFeatureData('name_the_animal');
+    const nameData = ctx.getFeatureData('name_the_animal');
     const names = nameData.names || {};
     const entries = Object.entries(names);
     if (entries.length === 0) return;
