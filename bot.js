@@ -62,6 +62,15 @@ process.on('SIGTERM', () => {
 function resolveAiKey(chatId) {
   const user = getUser(chatId);
   if (user?.aiKey) return user.aiKey;
+  // If user has an explicit provider, use the env key for that provider
+  if (user?.aiProvider) {
+    const envKeys = {
+      anthropic: process.env.ANTHROPIC_API_KEY,
+      grok: process.env.GROK_API_KEY,
+      groq: process.env.GROQ_API_KEY,
+    };
+    return envKeys[user.aiProvider] || getApiKey();
+  }
   return getApiKey();
 }
 
