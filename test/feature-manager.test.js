@@ -29,10 +29,10 @@ function loadFM() {
 }
 
 describe('feature-manager', () => {
-  it('loads all 15 features', () => {
+  it('loads all 16 features', () => {
     const fm = loadFM();
     const list = fm.getFeatureList(TEST_CHAT_ID);
-    assert.strictEqual(list.length, 15);
+    assert.strictEqual(list.length, 16);
   });
 
   it('all features have required fields', () => {

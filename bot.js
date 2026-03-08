@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const { sendPhoto, sendMessage, sendPoll, sendQuiz, deleteMessage, getUpdatesLongPoll } = require('./lib/telegram');
+const { sendPhoto, sendMessage, sendPoll, sendQuiz, deleteMessage, setMessageReaction, getUpdatesLongPoll } = require('./lib/telegram');
 const { loadChatHistory, addMessage } = require('./lib/chat-history');
 const { generateReply, generateText, getApiKey, getProvider, BASE_PROMPT, BASE_TOOLS } = require('./lib/ai');
 const { fetchRandomAnimal } = require('./lib/sources');
@@ -93,6 +93,7 @@ function makeCtx(chatId) {
     sendPhoto,
     sendPoll,
     sendQuiz,
+    setMessageReaction,
     generateText: (prompt) => generateText(aiKey, prompt, provider),
   };
 }
@@ -342,6 +343,7 @@ async function main() {
       const msgCtx = makeCtx(chatId);
       msgCtx.userName = userName;
       msgCtx.userText = userText;
+      msgCtx.messageId = msg.message_id;
       await fm.runHook('onMessage', msgCtx);
 
       try {
