@@ -1,6 +1,3 @@
-const { loadHistory } = require('../lib/history');
-const fm = require('../lib/feature-manager');
-
 module.exports = {
   id: 'weekly_recap',
   name: 'Weekly Recap',
@@ -13,19 +10,19 @@ module.exports = {
     if (now.getDay() !== 0) return;
 
     try {
-      const history = loadHistory();
+      const history = ctx.loadPhotoHistory();
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const weekPhotos = history.sent.filter((p) => new Date(p.sentAt) >= oneWeekAgo);
 
       // Get named animals from this week
-      const nameData = fm.getFeatureData('name_the_animal');
+      const nameData = ctx.getFeatureData('name_the_animal');
       const names = nameData.names || {};
       const weekNames = Object.entries(names)
         .filter(([timestamp]) => new Date(timestamp) >= oneWeekAgo)
         .map(([, name]) => name);
 
       // Get streak data
-      const streakData = fm.getFeatureData('streak_tracker');
+      const streakData = ctx.getFeatureData('streak_tracker');
       const streak = streakData.currentStreak || 0;
 
       const photoCount = weekPhotos.length;

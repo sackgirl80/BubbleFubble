@@ -4,7 +4,8 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { fetchRandomAnimal } = require('./lib/sources');
 const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
 const { sendPhoto, sendMessage, sendPoll, sendQuiz } = require('./lib/telegram');
-const { generateText, getApiKey } = require('./lib/ai');
+const { generateText, getApiKey, getProvider } = require('./lib/ai');
+const { getAllChatIds, getUser } = require('./lib/users');
 const fm = require('./lib/feature-manager');
 
 const CAPTIONS = [
@@ -20,18 +21,24 @@ const CAPTIONS = [
   'Dieses Tier hat heute an dich gedacht',
 ];
 
+function resolveAiKey(chatId) {
+  const user = getUser(chatId);
+  if (user?.aiKey) return user.aiKey;
+  return getApiKey();
+}
+
+function resolveProvider(chatId) {
+  const user = getUser(chatId);
+  if (user?.aiProvider) return user.aiProvider;
+  return getProvider();
+}
+
 async function main() {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
   const pexelsKey = process.env.PEXELS_API_KEY;
-  const aiKey = getApiKey();
 
   if (!botToken || botToken === 'your_bot_token_here') {
     console.error('Set TELEGRAM_BOT_TOKEN in .env');
-    process.exit(1);
-  }
-  if (!chatId || chatId === 'your_chat_id_here') {
-    console.error('Set TELEGRAM_CHAT_ID in .env (run: node get-chat-id.js)');
     process.exit(1);
   }
   if (!pexelsKey || pexelsKey === 'your_pexels_api_key_here') {
@@ -41,67 +48,79 @@ async function main() {
 
   // Load features
   fm.loadFeatures();
-  fm.loadConfig();
 
-  console.log(`[${new Date().toISOString()}] BubbleFubble starting...`);
+  const chatIds = getAllChatIds();
+  if (chatIds.length === 0) {
+    console.log('No registered users. Send /start to the bot first.');
+    process.exit(0);
+  }
 
-  const history = loadHistory();
-  console.log(`History: ${history.sent.length} photos previously sent.`);
+  console.log(`[${new Date().toISOString()}] BubbleFubble starting for ${chatIds.length} user(s)...`);
 
-  let photo = null;
-  const maxAttempts = 10;
+  for (const chatId of chatIds) {
+    fm.loadConfig(chatId);
+    const aiKey = resolveAiKey(chatId);
+    const provider = resolveProvider(chatId);
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const candidate = await fetchRandomAnimal(pexelsKey);
-    if (!isAlreadySent(history, candidate.id)) {
-      photo = candidate;
-      break;
+    const history = loadHistory(chatId);
+    console.log(`[${chatId}] History: ${history.sent.length} photos previously sent.`);
+
+    let photo = null;
+    const maxAttempts = 10;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const candidate = await fetchRandomAnimal(pexelsKey);
+      if (!isAlreadySent(history, candidate.id)) {
+        photo = candidate;
+        break;
+      }
+      console.log(
+        `[${chatId}] Duplicate (${candidate.id}), retrying... (${attempt + 1}/${maxAttempts})`
+      );
     }
-    console.log(
-      `Duplicate (${candidate.id}), retrying... (${attempt + 1}/${maxAttempts})`
-    );
+
+    if (!photo) {
+      console.error(`[${chatId}] Could not find a new photo after ${maxAttempts} attempts.`);
+      continue;
+    }
+
+    console.log(`[${chatId}] Selected: ${photo.source} / ${photo.id}`);
+
+    // Build context for feature hooks
+    const ctx = {
+      botToken,
+      chatId,
+      aiKey,
+      aiProvider: provider,
+      pexelsKey,
+      sendMessage,
+      sendPhoto,
+      sendPoll,
+      sendQuiz,
+      generateText: (prompt) => generateText(aiKey, prompt, provider),
+      animal: photo.animal,
+      photoUrl: photo.url,
+      photoId: photo.id,
+      photoSource: photo.source,
+    };
+
+    // Run beforePhoto hooks (e.g. guess the animal poll)
+    await fm.runHook('beforePhoto', ctx);
+
+    // Check if guess feature delayed the photo (waiting for user to answer poll)
+    const guessData = fm.getFeatureData(chatId, 'guess_the_animal');
+    if (guessData.pendingGuess) {
+      console.log(`[${chatId}] Photo delayed — waiting for guess poll answer`);
+    } else {
+      const caption = CAPTIONS[Math.floor(Math.random() * CAPTIONS.length)];
+      await sendPhoto(botToken, chatId, photo.url, caption);
+      console.log(`[${chatId}] Photo sent!`);
+      recordSent(chatId, history, photo);
+      await fm.runHook('afterPhoto', ctx);
+    }
+
+    await fm.runHook('onDaily', ctx);
   }
-
-  if (!photo) {
-    console.error(`Could not find a new photo after ${maxAttempts} attempts.`);
-    process.exit(1);
-  }
-
-  console.log(`Selected: ${photo.source} / ${photo.id}`);
-
-  // Build context for feature hooks
-  const ctx = {
-    botToken,
-    chatId,
-    aiKey,
-    pexelsKey,
-    sendMessage,
-    sendPhoto,
-    sendPoll,
-    sendQuiz,
-    generateText: (prompt) => generateText(aiKey, prompt),
-    animal: photo.animal,
-    photoUrl: photo.url,
-    photoId: photo.id,
-    photoSource: photo.source,
-  };
-
-  // Run beforePhoto hooks (e.g. guess the animal poll)
-  await fm.runHook('beforePhoto', ctx);
-
-  // Check if guess feature delayed the photo (waiting for user to answer poll)
-  const guessData = fm.getFeatureData('guess_the_animal');
-  if (guessData.pendingGuess) {
-    console.log('Photo delayed — waiting for guess poll answer');
-  } else {
-    const caption = CAPTIONS[Math.floor(Math.random() * CAPTIONS.length)];
-    await sendPhoto(botToken, chatId, photo.url, caption);
-    console.log('Photo sent!');
-    recordSent(history, photo);
-    await fm.runHook('afterPhoto', ctx);
-  }
-
-  await fm.runHook('onDaily', ctx);
 
   console.log(`[${new Date().toISOString()}] Done.`);
 }

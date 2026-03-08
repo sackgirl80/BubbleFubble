@@ -1,39 +1,26 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const { sendPhoto, sendMessage, sendPoll, sendQuiz, getUpdatesLongPoll } = require('./lib/telegram');
+const { sendPhoto, sendMessage, sendPoll, sendQuiz, deleteMessage, getUpdatesLongPoll } = require('./lib/telegram');
 const { loadChatHistory, addMessage } = require('./lib/chat-history');
 const { generateReply, generateText, getApiKey, getProvider, BASE_PROMPT, BASE_TOOLS } = require('./lib/ai');
 const { fetchRandomAnimal } = require('./lib/sources');
 const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
+const { isRegistered, registerUser, getUser, updateUser, getAllChatIds } = require('./lib/users');
 const fm = require('./lib/feature-manager');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const AI_KEY = getApiKey();
 const PEXELS_KEY = process.env.PEXELS_API_KEY;
 
 if (!BOT_TOKEN || BOT_TOKEN === 'your_bot_token_here') {
   console.error('Set TELEGRAM_BOT_TOKEN in .env');
   process.exit(1);
 }
-if (!CHAT_ID || CHAT_ID === 'your_chat_id_here') {
-  console.error('Set TELEGRAM_CHAT_ID in .env');
-  process.exit(1);
-}
-if (!AI_KEY) {
-  const provider = getProvider();
-  console.error(`Set ${provider === 'groq' ? 'GROQ_API_KEY' : 'ANTHROPIC_API_KEY'} in .env`);
-  process.exit(1);
-}
 
 // Load features
 fm.loadFeatures();
-fm.loadConfig();
-console.log(`AI provider: ${getProvider()}`);
-console.log(
-  `Loaded ${fm.getFeatureList().length} features (${fm.getFeatureList().filter((f) => f.enabled).length} enabled)`
-);
+console.log(`AI provider (default): ${getProvider()}`);
+console.log(`Loaded ${fm.loadFeatures().length} features`);
 
 let running = true;
 
@@ -46,22 +33,37 @@ process.on('SIGTERM', () => {
   running = false;
 });
 
-function makeCtx() {
+function resolveAiKey(chatId) {
+  const user = getUser(chatId);
+  if (user?.aiKey) return user.aiKey;
+  return getApiKey();
+}
+
+function resolveProvider(chatId) {
+  const user = getUser(chatId);
+  if (user?.aiProvider) return user.aiProvider;
+  return getProvider();
+}
+
+function makeCtx(chatId) {
+  const aiKey = resolveAiKey(chatId);
+  const provider = resolveProvider(chatId);
   return {
     botToken: BOT_TOKEN,
-    chatId: CHAT_ID,
-    groqKey: AI_KEY,
+    chatId,
+    aiKey,
+    aiProvider: provider,
     pexelsKey: PEXELS_KEY,
     sendMessage,
     sendPhoto,
     sendPoll,
     sendQuiz,
-    generateText: (prompt) => generateText(AI_KEY, prompt),
+    generateText: (prompt) => generateText(aiKey, prompt, provider),
   };
 }
 
-async function fetchAndSendPhoto() {
-  const photoHistory = loadHistory();
+async function fetchAndSendPhoto(chatId) {
+  const photoHistory = loadHistory(chatId);
   let photo = null;
   for (let i = 0; i < 10; i++) {
     const candidate = await fetchRandomAnimal(PEXELS_KEY);
@@ -71,11 +73,10 @@ async function fetchAndSendPhoto() {
     }
   }
   if (photo) {
-    await sendPhoto(BOT_TOKEN, CHAT_ID, photo.url, '');
-    recordSent(photoHistory, photo);
-    console.log(`[${new Date().toISOString()}] BubbleFubble: [photo: ${photo.source}/${photo.id} (${photo.animal})]`);
-    // Run afterPhoto hooks with animal context
-    const ctx = makeCtx();
+    await sendPhoto(BOT_TOKEN, chatId, photo.url, '');
+    recordSent(chatId, photoHistory, photo);
+    console.log(`[${new Date().toISOString()}] [${chatId}] BubbleFubble: [photo: ${photo.source}/${photo.id} (${photo.animal})]`);
+    const ctx = makeCtx(chatId);
     ctx.animal = photo.animal;
     await fm.runHook('afterPhoto', ctx);
     return true;
@@ -83,65 +84,68 @@ async function fetchAndSendPhoto() {
   return false;
 }
 
-async function handleToolCall(toolName, args, chatHistory, userText) {
+async function handleToolCall(chatId, toolName, args, chatHistory, userText) {
+  const aiKey = resolveAiKey(chatId);
+  const provider = resolveProvider(chatId);
+
   if (toolName === 'send_photo') {
-    const sent = await fetchAndSendPhoto();
+    const sent = await fetchAndSendPhoto(chatId);
     if (!sent) {
-      await sendMessage(BOT_TOKEN, CHAT_ID, 'Hmm, ich konnte gerade kein neues Foto finden... versuch es gleich nochmal! 🙈');
+      await sendMessage(BOT_TOKEN, chatId, 'Hmm, ich konnte gerade kein neues Foto finden... versuch es gleich nochmal! 🙈');
     }
-    addMessage(chatHistory, 'user', userText);
-    addMessage(chatHistory, 'model', '[I used the send_photo tool to send a photo]');
+    addMessage(chatId, chatHistory, 'user', userText);
+    addMessage(chatId, chatHistory, 'model', '[I used the send_photo tool to send a photo]');
     return;
   }
 
   if (toolName === 'list_features') {
-    const list = fm.getFeatureList();
+    const list = fm.getFeatureList(chatId);
     const lines = list.map(
       (f) => `${f.enabled ? '✅' : '❌'} ${f.name} — ${f.description}`
     );
     const msg = '🔧 Features:\n\n' + lines.join('\n');
-    await sendMessage(BOT_TOKEN, CHAT_ID, msg);
-    addMessage(chatHistory, 'user', userText);
-    addMessage(chatHistory, 'model', msg);
+    await sendMessage(BOT_TOKEN, chatId, msg);
+    addMessage(chatId, chatHistory, 'user', userText);
+    addMessage(chatId, chatHistory, 'model', msg);
     return;
   }
 
   if (toolName === 'toggle_feature') {
-    const newState = fm.toggle(args.feature_id);
+    const newState = fm.toggle(chatId, args.feature_id);
     if (newState === null) {
-      await sendMessage(BOT_TOKEN, CHAT_ID, `Feature "${args.feature_id}" not found.`);
+      await sendMessage(BOT_TOKEN, chatId, `Feature "${args.feature_id}" not found.`);
     } else {
-      const feature = fm.getFeatureList().find((f) => f.id === args.feature_id);
+      const feature = fm.getFeatureList(chatId).find((f) => f.id === args.feature_id);
       const name = feature?.name || args.feature_id;
       const msg = newState
         ? `✅ ${name} is now enabled!`
         : `❌ ${name} is now disabled.`;
-      await sendMessage(BOT_TOKEN, CHAT_ID, msg);
-      addMessage(chatHistory, 'user', userText);
-      addMessage(chatHistory, 'model', msg);
+      await sendMessage(BOT_TOKEN, chatId, msg);
+      addMessage(chatId, chatHistory, 'user', userText);
+      addMessage(chatId, chatHistory, 'model', msg);
     }
     return;
   }
 
   // Check feature-specific tools
-  const feature = fm.findFeatureForTool(toolName);
+  const feature = fm.findFeatureForTool(chatId, toolName);
   if (feature && typeof feature.handleTool === 'function') {
-    const ctx = makeCtx();
-    ctx.loadFeatureData = () => fm.getFeatureData(feature.id);
-    ctx.saveFeatureData = (data) => fm.setFeatureData(feature.id, data);
+    const ctx = makeCtx(chatId);
+    ctx.loadFeatureData = () => fm.getFeatureData(chatId, feature.id);
+    ctx.saveFeatureData = (data) => fm.setFeatureData(chatId, feature.id, data);
     const result = await feature.handleTool(toolName, args, ctx);
     if (result) {
-      // Let the AI respond naturally after the tool call
       const reply = await generateText(
-        AI_KEY,
+        aiKey,
         `You just performed an action: ${result}. ` +
         `The user said: "${userText}". Write a short, friendly confirmation ` +
-        `in the same language the user used. 1-2 sentences max. Use emoji.`
+        `in the same language the user used. 1-2 sentences max. Use emoji.`,
+        provider
       );
       if (reply) {
-        await sendMessage(BOT_TOKEN, CHAT_ID, reply);
-        addMessage(chatHistory, 'user', userText);
-        addMessage(chatHistory, 'model', reply);
+        await sendMessage(BOT_TOKEN, chatId, reply);
+        addMessage(chatId, chatHistory, 'user', userText);
+        addMessage(chatId, chatHistory, 'model', reply);
       }
     }
     return;
@@ -151,34 +155,38 @@ async function handleToolCall(toolName, args, chatHistory, userText) {
 }
 
 async function handlePollAnswer(pollAnswer) {
-  // Reload config from disk since index.js (separate process) may have written the pending guess
-  fm.loadConfig();
-
-  const guessFeature = fm.findFeatureForTool('reveal_animal') ||
-    require('./features/guess-the-animal');
-
+  const guessFeature = require('./features/guess-the-animal');
   if (typeof guessFeature.onPollAnswer !== 'function') return;
 
-  const ctx = makeCtx();
-  ctx.pollId = pollAnswer.poll_id;
-  ctx.optionIds = pollAnswer.option_ids;
-  ctx.loadFeatureData = () => fm.getFeatureData('guess_the_animal');
-  ctx.saveFeatureData = (data) => fm.setFeatureData('guess_the_animal', data);
-  ctx.recordSent = (photo) => {
-    const history = loadHistory();
-    recordSent(history, photo);
-  };
-  ctx.runAfterPhoto = async (animal) => {
-    const hookCtx = makeCtx();
-    hookCtx.animal = animal;
-    await fm.runHook('afterPhoto', hookCtx);
-  };
+  // Find which user owns this poll
+  const allChatIds = getAllChatIds();
+  for (const chatId of allChatIds) {
+    fm.loadConfig(chatId);
+    const guessData = fm.getFeatureData(chatId, 'guess_the_animal');
+    if (guessData.pendingGuess?.pollId === pollAnswer.poll_id) {
+      const ctx = makeCtx(chatId);
+      ctx.pollId = pollAnswer.poll_id;
+      ctx.optionIds = pollAnswer.option_ids;
+      ctx.loadFeatureData = () => fm.getFeatureData(chatId, 'guess_the_animal');
+      ctx.saveFeatureData = (data) => fm.setFeatureData(chatId, 'guess_the_animal', data);
+      ctx.recordSent = (photo) => {
+        const history = loadHistory(chatId);
+        recordSent(chatId, history, photo);
+      };
+      ctx.runAfterPhoto = async (animal) => {
+        const hookCtx = makeCtx(chatId);
+        hookCtx.animal = animal;
+        await fm.runHook('afterPhoto', hookCtx);
+      };
 
-  try {
-    await guessFeature.onPollAnswer(ctx);
-    console.log(`[${new Date().toISOString()}] Guess poll answered`);
-  } catch (err) {
-    console.error('Poll answer error:', err.message);
+      try {
+        await guessFeature.onPollAnswer(ctx);
+        console.log(`[${new Date().toISOString()}] [${chatId}] Guess poll answered`);
+      } catch (err) {
+        console.error('Poll answer error:', err.message);
+      }
+      break;
+    }
   }
 }
 
@@ -212,33 +220,71 @@ async function main() {
       const msg = update.message;
       if (!msg || (!msg.text && !msg.poll)) continue;
 
-      if (String(msg.chat.id) !== String(CHAT_ID)) {
-        console.log(`Ignoring message from chat ${msg.chat.id}`);
+      const chatId = String(msg.chat.id);
+      const userName = msg.from?.first_name || 'User';
+
+      // Handle /start — register new users
+      if (msg.text === '/start') {
+        const isNew = registerUser(chatId, userName);
+        fm.loadConfig(chatId);
+        const greeting = isNew
+          ? `Willkommen bei BubbleFubble, ${userName}! 🎉🐾\n\nIch schicke dir jeden Morgen ein süßes Tierfoto und chatte gern mit dir! Schreib mir einfach eine Nachricht.`
+          : `Willkommen zurück, ${userName}! 🐾`;
+        await sendMessage(BOT_TOKEN, chatId, greeting);
+        console.log(`[${new Date().toISOString()}] [${chatId}] ${isNew ? 'New user' : 'Returning user'}: ${userName}`);
         continue;
       }
 
-      const userName = msg.from?.first_name || 'User';
+      // Require registration
+      if (!isRegistered(chatId)) {
+        await sendMessage(BOT_TOKEN, chatId, 'Sende /start um loszulegen! 🐾');
+        continue;
+      }
+
+      // Handle /setkey — per-user API key
+      if (msg.text && msg.text.startsWith('/setkey')) {
+        // Delete the message containing the key for security
+        await deleteMessage(BOT_TOKEN, chatId, msg.message_id);
+        const parts = msg.text.slice(7).trim().split(/\s+/);
+        if (parts[0] === 'clear') {
+          updateUser(chatId, { aiProvider: null, aiKey: null });
+          await sendMessage(BOT_TOKEN, chatId, '🔑 Using shared API key now.');
+        } else if (parts.length === 2 && ['anthropic', 'grok', 'groq'].includes(parts[0])) {
+          updateUser(chatId, { aiProvider: parts[0], aiKey: parts[1] });
+          await sendMessage(BOT_TOKEN, chatId, `🔑 API key set for ${parts[0]}. Your message with the key has been deleted for security.`);
+        } else {
+          await sendMessage(BOT_TOKEN, chatId,
+            '🔑 Usage:\n/setkey <provider> <key>\n/setkey clear\n\nProviders: anthropic, grok, groq');
+        }
+        console.log(`[${new Date().toISOString()}] [${chatId}] /setkey command`);
+        continue;
+      }
+
+      // Ensure config is loaded for this user
+      fm.loadConfig(chatId);
 
       // Handle polls (Umfrage) — bots can't vote, so reply with a text message
       if (msg.poll) {
         const question = msg.poll.question;
         const options = msg.poll.options.map((o) => o.text);
         const optionsList = options.map((o, i) => `${i + 1}) ${o}`).join(' ');
-        console.log(`[${new Date().toISOString()}] ${userName}: [poll] ${question} — ${optionsList}`);
+        console.log(`[${new Date().toISOString()}] [${chatId}] ${userName}: [poll] ${question} — ${optionsList}`);
 
         try {
+          const aiKey = resolveAiKey(chatId);
+          const provider = resolveProvider(chatId);
           const prompt =
             `${userName} sent you a poll/Umfrage: "${question}". ` +
             `The options are: ${optionsList}. ` +
             `Pick one option and explain your choice briefly (1-2 sentences). ` +
             `Be playful and fun. Use emoji. Reply in the same language as the question.`;
-          const reply = await generateText(AI_KEY, prompt);
+          const reply = await generateText(aiKey, prompt, provider);
           if (reply) {
-            await sendMessage(BOT_TOKEN, CHAT_ID, reply);
-            console.log(`[${new Date().toISOString()}] BubbleFubble: ${reply}`);
-            const chatHistory = loadChatHistory();
-            addMessage(chatHistory, 'user', `[Poll: ${question} — ${optionsList}]`);
-            addMessage(chatHistory, 'model', reply);
+            await sendMessage(BOT_TOKEN, chatId, reply);
+            console.log(`[${new Date().toISOString()}] [${chatId}] BubbleFubble: ${reply}`);
+            const chatHistory = loadChatHistory(chatId);
+            addMessage(chatId, chatHistory, 'user', `[Poll: ${question} — ${optionsList}]`);
+            addMessage(chatId, chatHistory, 'model', reply);
           }
         } catch (err) {
           console.error('Poll reply error:', err.message);
@@ -247,35 +293,37 @@ async function main() {
       }
 
       const userText = msg.text;
-      console.log(`[${new Date().toISOString()}] ${userName}: ${userText}`);
+      console.log(`[${new Date().toISOString()}] [${chatId}] ${userName}: ${userText}`);
 
       // Run onMessage hooks for features that need to track user activity
-      const msgCtx = makeCtx();
+      const msgCtx = makeCtx(chatId);
       msgCtx.userName = userName;
       msgCtx.userText = userText;
       await fm.runHook('onMessage', msgCtx);
 
       try {
-        const chatHistory = loadChatHistory();
+        const chatHistory = loadChatHistory(chatId);
+        const aiKey = resolveAiKey(chatId);
+        const provider = resolveProvider(chatId);
 
         // Build dynamic prompt and tools from enabled features
-        const systemPrompt = fm.buildSystemPrompt(BASE_PROMPT);
-        const tools = fm.buildTools(BASE_TOOLS);
+        const systemPrompt = fm.buildSystemPrompt(chatId, BASE_PROMPT);
+        const tools = fm.buildTools(chatId, BASE_TOOLS);
 
-        const result = await generateReply(AI_KEY, chatHistory, userText, systemPrompt, tools);
+        const result = await generateReply(aiKey, chatHistory, userText, systemPrompt, tools, provider);
         console.log(
-          `[${new Date().toISOString()}] AI decision: ${result.type}` +
+          `[${new Date().toISOString()}] [${chatId}] AI decision: ${result.type}` +
           (result.toolName ? ` (${result.toolName})` : '') +
           (result.text ? ` -> ${result.text.substring(0, 80)}` : '')
         );
 
         if (result.type === 'tool_call') {
-          await handleToolCall(result.toolName, result.args, chatHistory, userText);
+          await handleToolCall(chatId, result.toolName, result.args, chatHistory, userText);
         } else {
-          await sendMessage(BOT_TOKEN, CHAT_ID, result.text);
-          console.log(`[${new Date().toISOString()}] BubbleFubble: ${result.text}`);
-          addMessage(chatHistory, 'user', userText);
-          addMessage(chatHistory, 'model', result.text);
+          await sendMessage(BOT_TOKEN, chatId, result.text);
+          console.log(`[${new Date().toISOString()}] [${chatId}] BubbleFubble: ${result.text}`);
+          addMessage(chatId, chatHistory, 'user', userText);
+          addMessage(chatId, chatHistory, 'model', result.text);
         }
       } catch (err) {
         console.error('Reply error:', err.message);

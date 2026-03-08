@@ -1,5 +1,3 @@
-const { getProvider } = require('../lib/ai');
-
 module.exports = {
   id: 'credit_balance',
   name: 'Credit Balance',
@@ -28,7 +26,7 @@ module.exports = {
   async handleTool(toolName, args, ctx) {
     if (toolName !== 'check_credit') return null;
 
-    const provider = getProvider();
+    const provider = ctx.getProvider();
 
     if (provider === 'grok') {
       return await checkGrokBalance();
@@ -47,7 +45,7 @@ module.exports = {
   },
 
   async onDaily(ctx) {
-    const provider = getProvider();
+    const provider = ctx.getProvider();
     if (provider !== 'grok') return;
 
     try {

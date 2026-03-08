@@ -2,6 +2,10 @@ node_modules/
 .env
 logs/
 sent-photos.json
+sent-photos.json.bak
 chat-history.json
+chat-history.json.bak
 features.json
+features.json.bak
+data/
 .claude/
