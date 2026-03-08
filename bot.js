@@ -93,8 +93,9 @@ async function handleToolCall(chatId, toolName, args, chatHistory, userText) {
     if (!sent) {
       await sendMessage(BOT_TOKEN, chatId, 'Hmm, ich konnte gerade kein neues Foto finden... versuch es gleich nochmal! 🙈');
     }
+    // Only log user message — no fake model message for tool calls,
+    // as the AI mimics whatever text we put here instead of calling the tool
     addMessage(chatId, chatHistory, 'user', userText);
-    addMessage(chatId, chatHistory, 'model', sent ? 'Here you go! 📸' : 'Sorry, I could not find a new photo right now.');
     return;
   }
 
