@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -8,6 +9,31 @@ const { fetchRandomAnimal } = require('./lib/sources');
 const { loadHistory, isAlreadySent, recordSent } = require('./lib/history');
 const { isRegistered, registerUser, getUser, updateUser, getAllChatIds } = require('./lib/users');
 const fm = require('./lib/feature-manager');
+
+const ISSUES_LOG = path.join(__dirname, 'logs', 'issues.log');
+
+function logIssue(chatId, userText, error) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    chatId,
+    userText: userText?.substring(0, 200),
+    error: error?.message || String(error),
+    stack: error?.stack?.split('\n').slice(0, 3).join(' | '),
+  };
+  try {
+    fs.mkdirSync(path.join(__dirname, 'logs'), { recursive: true });
+    fs.appendFileSync(ISSUES_LOG, JSON.stringify(entry) + '\n');
+  } catch {}
+  console.error(`[${entry.timestamp}] [${chatId}] ISSUE: ${entry.error}`);
+}
+
+async function notifyUserOfError(chatId) {
+  try {
+    await sendMessage(BOT_TOKEN, chatId,
+      'Hmm, da ist etwas schiefgelaufen bei meiner Antwort — sorry! 🙈 Ich habe den Fehler intern gespeichert, damit er behoben werden kann.'
+    );
+  } catch {}
+}
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const PEXELS_KEY = process.env.PEXELS_API_KEY;
@@ -189,7 +215,8 @@ async function handlePollAnswer(pollAnswer) {
         await guessFeature.onPollAnswer(ctx);
         console.log(`[${new Date().toISOString()}] [${chatId}] Guess poll answered`);
       } catch (err) {
-        console.error('Poll answer error:', err.message);
+        logIssue(chatId, '[poll answer]', err);
+        await notifyUserOfError(chatId);
       }
       break;
     }
@@ -293,7 +320,8 @@ async function main() {
             addMessage(chatId, chatHistory, 'model', reply);
           }
         } catch (err) {
-          console.error('Poll reply error:', err.message);
+          logIssue(chatId, `[Poll: ${question}]`, err);
+          await notifyUserOfError(chatId);
         }
         continue;
       }
@@ -332,7 +360,8 @@ async function main() {
           addMessage(chatId, chatHistory, 'model', result.text);
         }
       } catch (err) {
-        console.error('Reply error:', err.message);
+        logIssue(chatId, userText, err);
+        await notifyUserOfError(chatId);
       }
     }
   }
