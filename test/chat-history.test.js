@@ -1,27 +1,24 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const path = require('path');
+const { getDb, closeDb } = require('../lib/db');
 
 const TEST_CHAT_ID = 'test-chat-123';
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const USER_DIR = path.join(DATA_DIR, TEST_CHAT_ID);
-const HISTORY_PATH = path.join(USER_DIR, 'chat-history.json');
 
 beforeEach(() => {
-  fs.mkdirSync(USER_DIR, { recursive: true });
-  try { fs.unlinkSync(HISTORY_PATH); } catch {}
+  const db = getDb();
+  db.prepare('DELETE FROM chat_history WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('INSERT OR IGNORE INTO users (chat_id, first_name) VALUES (?, ?)').run(TEST_CHAT_ID, 'Test');
   delete require.cache[require.resolve('../lib/chat-history')];
-  delete require.cache[require.resolve('../lib/users')];
 });
 
 afterEach(() => {
-  try { fs.unlinkSync(HISTORY_PATH); } catch {}
-  try { fs.rmdirSync(USER_DIR); } catch {}
+  const db = getDb();
+  db.prepare('DELETE FROM chat_history WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('DELETE FROM users WHERE chat_id = ?').run(TEST_CHAT_ID);
 });
 
 describe('chat-history', () => {
-  it('loadChatHistory returns empty messages when no file', () => {
+  it('loadChatHistory returns empty messages when no data', () => {
     const { loadChatHistory } = require('../lib/chat-history');
     const h = loadChatHistory(TEST_CHAT_ID);
     assert.deepStrictEqual(h, { messages: [] });
@@ -51,7 +48,7 @@ describe('chat-history', () => {
     assert.strictEqual(h.messages[99].text, 'message 109');
   });
 
-  it('persists to disk', () => {
+  it('persists to database', () => {
     const { loadChatHistory, addMessage } = require('../lib/chat-history');
     const h = loadChatHistory(TEST_CHAT_ID);
     addMessage(TEST_CHAT_ID, h, 'user', 'test');

@@ -1,27 +1,24 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const path = require('path');
+const { getDb, closeDb } = require('../lib/db');
 
 const TEST_CHAT_ID = 'test-chat-456';
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const USER_DIR = path.join(DATA_DIR, TEST_CHAT_ID);
-const HISTORY_PATH = path.join(USER_DIR, 'sent-photos.json');
 
 beforeEach(() => {
-  fs.mkdirSync(USER_DIR, { recursive: true });
-  try { fs.unlinkSync(HISTORY_PATH); } catch {}
+  const db = getDb();
+  db.prepare('DELETE FROM sent_photos WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('INSERT OR IGNORE INTO users (chat_id, first_name) VALUES (?, ?)').run(TEST_CHAT_ID, 'Test');
   delete require.cache[require.resolve('../lib/history')];
-  delete require.cache[require.resolve('../lib/users')];
 });
 
 afterEach(() => {
-  try { fs.unlinkSync(HISTORY_PATH); } catch {}
-  try { fs.rmdirSync(USER_DIR); } catch {}
+  const db = getDb();
+  db.prepare('DELETE FROM sent_photos WHERE chat_id = ?').run(TEST_CHAT_ID);
+  db.prepare('DELETE FROM users WHERE chat_id = ?').run(TEST_CHAT_ID);
 });
 
 describe('history', () => {
-  it('loadHistory returns empty sent array when no file', () => {
+  it('loadHistory returns empty sent array when no data', () => {
     const { loadHistory } = require('../lib/history');
     const h = loadHistory(TEST_CHAT_ID);
     assert.deepStrictEqual(h, { sent: [] });
@@ -46,7 +43,7 @@ describe('history', () => {
     assert.strictEqual(isAlreadySent(h, 'test-2'), false);
   });
 
-  it('history persists to disk', () => {
+  it('history persists to database', () => {
     const { loadHistory, recordSent } = require('../lib/history');
     const h = loadHistory(TEST_CHAT_ID);
     recordSent(TEST_CHAT_ID, h, { id: 'test-1', url: 'http://example.com/1.jpg', source: 'test' });
